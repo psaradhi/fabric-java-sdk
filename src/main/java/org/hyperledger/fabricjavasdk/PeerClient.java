@@ -56,14 +56,15 @@ public class PeerClient {
 
     protos.Chaincode.ChaincodeID cid = protos.Chaincode.ChaincodeID
 			.newBuilder()
-			.setName("abcd")
+			.setName("mycc")
 			.build();
 
 
     protos.Chaincode.ChaincodeInput input = protos.Chaincode.ChaincodeInput
 			.newBuilder()
 //			.setFunction()
-			.addArgs(ByteString.copyFrom("init".getBytes()))
+			.addArgs(ByteString.copyFrom("query".getBytes()))
+			.addArgs(ByteString.copyFrom("a".getBytes()))
 			.build();
 
     protos.Chaincode.ChaincodeSpec spec = protos.Chaincode.ChaincodeSpec
@@ -104,7 +105,7 @@ public class PeerClient {
       info("Status: \"{0}\" at {1}, {2}",
           response.getStatusValue(),
           response.getStatus().name(),
-          String.valueOf(response.getMsg().toByteArray()));
+          String.valueOf(response.getMsg().toStringUtf8()));
   }
 
   /**
@@ -122,7 +123,11 @@ public class PeerClient {
     protos.Chaincode.ChaincodeInput input = protos.Chaincode.ChaincodeInput
 			.newBuilder()
 //			.setFunction()
-			.addArgs(ByteString.copyFrom("{ \"Args\": [\"init\", \"a\", \"100\", \"b\", \"200\"]}".getBytes()))
+			.addArgs(ByteString.copyFrom("init".getBytes()))
+			.addArgs(ByteString.copyFrom("a".getBytes()))
+			.addArgs(ByteString.copyFrom("100".getBytes()))
+			.addArgs(ByteString.copyFrom("b".getBytes()))
+			.addArgs(ByteString.copyFrom("200".getBytes()))
 			.build();
 
     protos.Chaincode.ChaincodeSpec spec = protos.Chaincode.ChaincodeSpec
@@ -163,7 +168,7 @@ public class PeerClient {
       info("Status: \"{0}\" at {1}, {2}",
           response.getStatusValue(),
           response.getStatus().name(),
-          String.valueOf(response.getMsg().toByteArray()));
+          response.getMsg().toStringUtf8());
   }
 
   
@@ -172,8 +177,8 @@ public class PeerClient {
 
     PeerClient client = new PeerClient("localhost", 7051);
     try {
-      // Looking for a valid feature
       client.deploy();
+      client.query();
     } finally {
       client.shutdown();
     }

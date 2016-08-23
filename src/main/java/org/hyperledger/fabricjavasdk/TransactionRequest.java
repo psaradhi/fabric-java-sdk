@@ -1,9 +1,16 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.ArrayList;
 
 /**
  * A base transaction request common for DeployRequest, InvokeRequest, and QueryRequest.
  */
-interface TransactionRequest {
-    // The chaincode ID as provided by the 'submitted' event emitted by a TransactionContext
+public class TransactionRequest {
+    // The local path containing the chaincode to deploy in network mode.
+    String chaincodePath;
+    // The name identifier for the chaincode to deploy in development mode.
+    String chaincodeName;
+	// The chaincode ID as provided by the 'submitted' event emitted by a TransactionContext
     String chaincodeID;
     // The name of the function to invoke
     String fcn;

@@ -1,6 +1,7 @@
+package org.hyperledger.fabricjavasdk;
 
 /**
  * Query request.
  */
-interface QueryRequest extends InvokeOrQueryRequest {
+public class QueryRequest extends InvokeOrQueryRequest {
 }

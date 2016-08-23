@@ -1,6 +1,7 @@
+package org.hyperledger.fabricjavasdk;
 
 /**
  * Invoke request.
  */
-export interface InvokeRequest extends InvokeOrQueryRequest {
+public class InvokeRequest extends InvokeOrQueryRequest {
 }

@@ -1,27 +1,44 @@
+package org.hyperledger.fabricjavasdk;
+
 import java.nio.Buffer;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
+
+import protos.Chaincode.ChaincodeDeploymentSpec;
+import protos.Chaincode.ChaincodeInput;
+import protos.Chaincode.ChaincodeSpec;
+import protos.Chaincode.ConfidentialityLevel;
 
 /**
  * A transaction context emits events 'submitted', 'complete', and 'error'.
  * Each transaction context uses exactly one tcert.
  */
-class TransactionContext extends events.EventEmitter {
+class TransactionContext  {
+	private static final Logger logger = Logger.getLogger(TransactionContext.class.getName());
 
     private Member member;
     private Chain chain;
     private MemberServices memberServices;
-    private nonce: any;
-    private binding: any;
+//    private nonce: any;
+//    private binding: any;
     private TCert tcert;
     private ArrayList<String> attrs;
 
+    public TransactionContext (Member member) {
+    	this(member, null);
+    }
+    
     public TransactionContext (Member member, TCert tcert) {
         super();
         this.member = member;
         this.chain = member.getChain();
         this.memberServices = this.chain.getMemberServices();
         this.tcert = tcert;
-        this.nonce = this.chain.cryptoPrimitives.generateNonce();
+  //      this.nonce = this.chain.cryptoPrimitives.generateNonce();
     }
 
     /**
@@ -51,9 +68,9 @@ class TransactionContext extends events.EventEmitter {
     /**
      * Emit a specific event provided an event listener is already registered.
      */
-    public void emitMyEvent(String name, event:any) {
-       var self = this;
-
+    public void emitMyEvent(String name, Object event) {
+       TransactionContext self = this;
+/*
        setTimeout(function() {
          // Check if an event listener has been registered for the event
          let listeners = self.listeners(name);
@@ -63,6 +80,7 @@ class TransactionContext extends events.EventEmitter {
             self.emit(name, event);
          }
        }, 0);
+*/
     }
 
     /**
@@ -73,21 +91,22 @@ class TransactionContext extends events.EventEmitter {
         debug("TransactionContext.deploy");
         debug("Received deploy request: %j", deployRequest);
 
-        TransactionContext self = this;
-
         // Get a TCert to use in the deployment transaction
-        self.getMyTCert();
-        if (err) {
+        /*TODO implement security
+        this.tcert = getMyTCert();
+        if (null == tcert) {
            debug("Failed getting a new TCert [%s]", err);
-           self.emitMyEvent('error', new EventTransactionError(err));
+           self.emitMyEvent("error", new EventTransactionError(err));
 
            return self;
          }
 
          debug("Got a TCert successfully, continue...");
+         */
 
-         newBuildOrDeployTransaction(deployRequest, false); 
+         Transaction transaction = createTransaction(deployRequest, protos.Fabric.Transaction.Type.CHAINCODE_DEPLOY);
 
+         /*TODO implement error checks
          if (err) {
                 debug("Error in newBuildOrDeployTransaction [%s]", err);
                 self.emitMyEvent("error", new EventTransactionError(err));
@@ -96,8 +115,9 @@ class TransactionContext extends events.EventEmitter {
           }
 
           debug("Calling TransactionContext.execute");
-
-        execute(deployTx);
+		*/
+         
+        execute(transaction);
         return this;
     }
 
@@ -109,10 +129,10 @@ class TransactionContext extends events.EventEmitter {
         debug("TransactionContext.invoke");
         debug("Received invoke request: %j", invokeRequest);
 
-        let self = this;
-
         // Get a TCert to use in the invoke transaction
-        self.setAttrs(invokeRequest.attrs);
+        setAttrs(invokeRequest.attrs);
+        
+        /*TODO add error check
         self.getMyTCert(function (err, tcert) {
             if (err) {
                 debug('Failed getting a new TCert [%s]', err);
@@ -122,8 +142,10 @@ class TransactionContext extends events.EventEmitter {
             }
 
             debug("Got a TCert successfully, continue...");
-
-            self.newInvokeOrQueryTransaction(invokeRequest, true, function(err, invokeTx) {
+		*/
+        Transaction transaction = invokeTransaction(invokeRequest);
+        
+        /*TODO add error check
               if (err) {
                 debug("Error in newInvokeOrQueryTransaction [%s]", err);
                 self.emitMyEvent('error', new EventTransactionError(err));
@@ -137,6 +159,8 @@ class TransactionContext extends events.EventEmitter {
             });
         });
         return self;
+        */
+        return execute(transaction);
     }
 
     /**
@@ -147,10 +171,11 @@ class TransactionContext extends events.EventEmitter {
       debug("TransactionContext.query");
       debug("Received query request: %j", queryRequest);
 
-      let self = this;
 
       // Get a TCert to use in the query transaction
-      self.setAttrs(queryRequest.attrs);
+      setAttrs(queryRequest.attrs);
+      
+      /*TODO obtain certificates
       self.getMyTCert(function (err, tcert) {
           if (err) {
               debug('Failed getting a new TCert [%s]', err);
@@ -175,6 +200,10 @@ class TransactionContext extends events.EventEmitter {
           });
         });
       return self;
+      */
+      
+      Transaction transaction = queryTransaction(queryRequest);
+      return execute(transaction);
     }
 
    /**
@@ -198,6 +227,8 @@ class TransactionContext extends events.EventEmitter {
     private TransactionContext execute(Transaction tx) {
         debug("Executing transaction [%j]", tx);
 
+        getChain().sendTransaction(tx);
+        /*TODO implement security
         // Get the TCert
         self.getMyTCert();
         if (err) {
@@ -257,8 +288,8 @@ class TransactionContext extends events.EventEmitter {
         return self;
     }
 
-    private void getMyTCert(cb:GetTCertCallback) {
-        TransactionContext self = this;
+    TCert getMyTCert(cb:GetTCertCallback) {
+    	TransactionContext self = this;
         if (!self.getChain().isSecurityEnabled() || self.tcert) {
             debug("[TransactionContext] TCert already cached.");
             return cb(null, self.tcert);
@@ -269,10 +300,13 @@ class TransactionContext extends events.EventEmitter {
             self.tcert = tcert;
             return cb(null, tcert);
         });
+        */
+        return null; //TODO return the correct certificate
     }
 
     private void processConfidentiality(Transaction transaction) {
-        // is confidentiality required?
+        /* TODO implement processConfidentiality function 
+    	// is confidentiality required?
         if (transaction.pb.getConfidentialityLevel() != _fabricProto.ConfidentialityLevel.CONFIDENTIAL) {
             // No confidentiality is required
             return
@@ -364,9 +398,12 @@ class TransactionContext extends events.EventEmitter {
             );
             transaction.pb.setMetadata(encryptedMetadata);
         }
+        
+        */
     }
 
     private void decryptResult(Buffer ct) {
+    	/* TODO implement decryptResult function 
         let key = new Buffer(
             this.chain.cryptoPrimitives.hmacAESTruncated(
                 this.member.getEnrollment().queryStateKey,
@@ -375,133 +412,139 @@ class TransactionContext extends events.EventEmitter {
 
         debug("Decrypt Result [%s]", ct.toString("hex"));
         return this.chain.cryptoPrimitives.aes256GCMDecrypt(key, ct);
+        */
     }
 
     /**
      * Create a deploy transaction.
      * @param request {Object} A BuildRequest or DeployRequest
      */
-    private void newBuildOrDeployTransaction(DeployRequest request, boolean isBuildRequest, cb:DeployTransactionCallback) {
+    private void newBuildOrDeployTransaction(DeployRequest request, boolean isBuildRequest) {
       	debug("newBuildOrDeployTransaction");
 
-        let self = this;
-
         // Determine if deployment is for dev mode or net mode
-        if (self.chain.isDevMode()) {
+        if (chain.isDevMode()) {
             // Deployment in developent mode. Build a dev mode transaction.
-            this.newDevModeTransaction(request, isBuildRequest, function(err, tx) {
+            newDevModeTransaction(request, isBuildRequest);
+            
+            /*TODO add logic implemented in callback function 
+             function(err, tx) {
                 if(err) {
                     return cb(err);
                 } else {
                     return cb(null, tx);
                 }
             });
+            */
         } else {
             // Deployment in network mode. Build a net mode transaction.
-            this.newNetModeTransaction(request, isBuildRequest, function(err, tx) {
+//            newNetModeTransaction(request, isBuildRequest);
+            
+            /*TODO add logic implemented in callback function 
+            function(err, tx) {
                 if(err) {
                     return cb(err);
                 } else {
                     return cb(null, tx);
                 }
             });
+            */
         }
     } // end newBuildOrDeployTransaction
 
+    
+    
+    private Transaction createTransaction(TransactionRequest request, protos.Fabric.Transaction.Type transactionType) {
+
+    	//Construct the chaincodeID
+        protos.Chaincode.ChaincodeID chaincodeID =  protos.Chaincode.ChaincodeID.newBuilder()
+        		.setName(request.chaincodeName)
+        		.build();
+//        debug("newDevModeTransaction: chaincodeID: " + JSON.stringify(chaincodeID));
+
+        
+        //convert all args to ByteString
+        ArrayList<ByteString> args = new ArrayList<>(request.args.size());
+        for(String arg : request.args) {
+        	args.add(ByteString.copyFrom(arg.getBytes()));
+        }
+        
+        // Set ctorMsg
+        ChaincodeInput chaincodeInput = protos.Chaincode.ChaincodeInput.newBuilder()
+        		.addAllArgs(args)
+        		.build();
+        				
+        // Construct the ChaincodeSpec
+        ChaincodeSpec chaincodeSpec = protos.Chaincode.ChaincodeSpec.newBuilder()
+        		.setType(protos.Chaincode.ChaincodeSpec.Type.JAVA)
+        		.setChaincodeID(chaincodeID)
+        		.setCtorMsg(chaincodeInput)
+        		.build();
+        
+
+        // Construct the ChaincodeDeploymentSpec (i.e. the payload)
+        
+        ChaincodeDeploymentSpec chaincodeDeploymentSpec = protos.Chaincode.ChaincodeDeploymentSpec.newBuilder()
+        		.setChaincodeSpec(chaincodeSpec)
+        		.build();
+
+        ConfidentialityLevel confidentialityLevel = request.confidential ? protos.Chaincode.ConfidentialityLevel.CONFIDENTIAL : protos.Chaincode.ConfidentialityLevel.PUBLIC;
+        
+        protos.Fabric.Transaction tx = protos.Fabric.Transaction.newBuilder()
+        		.setType(transactionType)
+        		.setChaincodeID(chaincodeID.toByteString())
+        		.setPayload(chaincodeDeploymentSpec.toByteString())
+//TODO        		.setMetadata(request.metadata)
+        		.build();
+
+
+                /*TODO Set the user certificate data
+                if (request.userCert) {
+                	/*TODO implement user certificates
+                    // cert based
+                    let certRaw = new Buffer(self.tcert.publicKey);
+                    // debug('========== Invoker Cert [%s]', certRaw.toString("hex"));
+                    let nonceRaw = new Buffer(self.nonce);
+                    let bindingMsg = Buffer.concat([certRaw, nonceRaw]);
+                    // debug('========== Binding Msg [%s]', bindingMsg.toString("hex"));
+                    this.binding = new Buffer(self.chain.cryptoPrimitives.hash(bindingMsg), "hex");
+                    // debug('========== Binding [%s]', this.binding.toString("hex"));
+                    let ctor = chaincodeSpec.getCtorMsg().toBuffer();
+                    // debug('========== Ctor [%s]', ctor.toString("hex"));
+                    let txmsg = Buffer.concat([ctor, this.binding]);
+                    // debug('========== Payload||binding [%s]', txmsg.toString("hex"));
+                    let mdsig = self.chain.cryptoPrimitives.ecdsaSign(request.userCert.privateKey.getPrivate("hex"), txmsg);
+                    let sigma = new Buffer(mdsig.toDER());
+                    // debug('========== Sigma [%s]', sigma.toString("hex"));
+                    tx.setMetadata(sigma);
+                }
+                    */
+
+        return new Transaction(tx, request.chaincodeName);
+
+    }
+    
     /**
      * Create a development mode deploy transaction.
      * @param request {Object} A development mode BuildRequest or DeployRequest
      */
-    private void newDevModeTransaction(DeployRequest request, boolean isBuildRequest, cb:DeployTransactionCallback) {
+    private Transaction newDevModeTransaction(DeployRequest request, boolean isBuildRequest) {
         debug("newDevModeTransaction");
 
-        let self = this;
-
         // Verify that chaincodeName is being passed
-        if (!request.chaincodeName || request.chaincodeName === "") {
-          return cb(Error("missing chaincodeName in DeployRequest"));
+        if (null == request.chaincodeName || request.chaincodeName.equals("")) {
+          throw new RuntimeException("missing chaincodeName in DeployRequest");
         }
 
-        let tx = new _fabricProto.Transaction();
-
-        if (isBuildRequest) {
-            tx.setType(_fabricProto.Transaction.Type.CHAINCODE_BUILD);
-        } else {
-            tx.setType(_fabricProto.Transaction.Type.CHAINCODE_DEPLOY);
-        }
-
-        // Set the chaincodeID
-        let chaincodeID = new _chaincodeProto.ChaincodeID();
-        chaincodeID.setName(request.chaincodeName);
-        debug("newDevModeTransaction: chaincodeID: " + JSON.stringify(chaincodeID));
-        tx.setChaincodeID(chaincodeID.toBuffer());
-
-        // Construct the ChaincodeSpec
-        let chaincodeSpec = new _chaincodeProto.ChaincodeSpec();
-        // Set Type -- GOLANG is the only chaincode language supported at this time
-        chaincodeSpec.setType(_chaincodeProto.ChaincodeSpec.Type.GOLANG);
-        // Set chaincodeID
-        chaincodeSpec.setChaincodeID(chaincodeID);
-        // Set ctorMsg
-        let chaincodeInput = new _chaincodeProto.ChaincodeInput();
-        chaincodeInput.setFunction(request.fcn);
-        chaincodeInput.setArgs(request.args);
-        chaincodeSpec.setCtorMsg(chaincodeInput);
-
-        // Construct the ChaincodeDeploymentSpec (i.e. the payload)
-        let chaincodeDeploymentSpec = new _chaincodeProto.ChaincodeDeploymentSpec();
-        chaincodeDeploymentSpec.setChaincodeSpec(chaincodeSpec);
-        tx.setPayload(chaincodeDeploymentSpec.toBuffer());
-
-        // Set the transaction UUID
-        tx.setUuid(request.chaincodeName);
-
-        // Set the transaction timestamp
-        tx.setTimestamp(sdk_util.GenerateTimestamp());
-
-        // Set confidentiality level
-        if (request.confidential) {
-            debug("Set confidentiality level to CONFIDENTIAL");
-            tx.setConfidentialityLevel(_fabricProto.ConfidentialityLevel.CONFIDENTIAL);
-        } else {
-            debug("Set confidentiality level to PUBLIC");
-            tx.setConfidentialityLevel(_fabricProto.ConfidentialityLevel.PUBLIC);
-        }
-
-        // Set request metadata
-        if (request.metadata) {
-            tx.setMetadata(request.metadata);
-        }
-
-        // Set the user certificate data
-        if (request.userCert) {
-            // cert based
-            let certRaw = new Buffer(self.tcert.publicKey);
-            // debug('========== Invoker Cert [%s]', certRaw.toString('hex'));
-            let nonceRaw = new Buffer(self.nonce);
-            let bindingMsg = Buffer.concat([certRaw, nonceRaw]);
-            // debug('========== Binding Msg [%s]', bindingMsg.toString('hex'));
-            this.binding = new Buffer(self.chain.cryptoPrimitives.hash(bindingMsg), 'hex');
-            // debug('========== Binding [%s]', this.binding.toString('hex'));
-            let ctor = chaincodeSpec.getCtorMsg().toBuffer();
-            // debug('========== Ctor [%s]', ctor.toString('hex'));
-            let txmsg = Buffer.concat([ctor, this.binding]);
-            // debug('========== Payload||binding [%s]', txmsg.toString('hex'));
-            let mdsig = self.chain.cryptoPrimitives.ecdsaSign(request.userCert.privateKey.getPrivate("hex"), txmsg);
-            let sigma = new Buffer(mdsig.toDER());
-            // debug('========== Sigma [%s]', sigma.toString('hex'));
-            tx.setMetadata(sigma);
-        }
-
-        tx = new Transaction(tx, request.chaincodeName);
-
-        return cb(null, tx);
+        return createTransaction(request, protos.Fabric.Transaction.Type.CHAINCODE_DEPLOY);
     }
 
     /**
      * Create a network mode deploy transaction.
      * @param request {Object} A network mode BuildRequest or DeployRequest
      */
+
+    /*TODO revisit newNetModeTransaction
     private void newNetModeTransaction(DeployRequest request, boolean isBuildRequest, cb:DeployTransactionCallback) {
         debug("newNetModeTransaction");
 
@@ -656,19 +699,19 @@ class TransactionContext extends events.EventEmitter {
                     if (request.userCert) {
                         // cert based
                         let certRaw = new Buffer(self.tcert.publicKey);
-                        // debug('========== Invoker Cert [%s]', certRaw.toString('hex'));
+                        // debug('========== Invoker Cert [%s]', certRaw.toString("hex"));
                         let nonceRaw = new Buffer(self.nonce);
                         let bindingMsg = Buffer.concat([certRaw, nonceRaw]);
-                        // debug('========== Binding Msg [%s]', bindingMsg.toString('hex'));
-                        self.binding = new Buffer(self.chain.cryptoPrimitives.hash(bindingMsg), 'hex');
-                        // debug('========== Binding [%s]', self.binding.toString('hex'));
+                        // debug('========== Binding Msg [%s]', bindingMsg.toString("hex"));
+                        self.binding = new Buffer(self.chain.cryptoPrimitives.hash(bindingMsg), "hex");
+                        // debug('========== Binding [%s]', self.binding.toString("hex"));
                         let ctor = chaincodeSpec.getCtorMsg().toBuffer();
-                        // debug('========== Ctor [%s]', ctor.toString('hex'));
+                        // debug('========== Ctor [%s]', ctor.toString("hex"));
                         let txmsg = Buffer.concat([ctor, self.binding]);
-                        // debug('========== Payload||binding [%s]', txmsg.toString('hex'));
-                        let mdsig = self.chain.cryptoPrimitives.ecdsaSign(request.userCert.privateKey.getPrivate('hex'), txmsg);
+                        // debug('========== Payload||binding [%s]', txmsg.toString("hex"));
+                        let mdsig = self.chain.cryptoPrimitives.ecdsaSign(request.userCert.privateKey.getPrivate("hex"), txmsg);
                         let sigma = new Buffer(mdsig.toDER());
-                        // debug('========== Sigma [%s]', sigma.toString('hex'));
+                        // debug('========== Sigma [%s]', sigma.toString("hex"));
                         tx.setMetadata(sigma);
                     }
 
@@ -706,90 +749,24 @@ class TransactionContext extends events.EventEmitter {
 	         }); // end writing .tar.gz
 	      }); // end writing Dockerfile
     }
+    
+    */
 
-    /**
-     * Create an invoke or query transaction.
-     * @param request {Object} A build or deploy request of the form: { chaincodeID, payload, metadata, uuid, timestamp, confidentiality: { level, version, nonce }
-     */
-    private void newInvokeOrQueryTransaction(InvokeOrQueryRequest request, boolean isInvokeRequest, cb:InvokeOrQueryTransactionCallback) {
-        let self = this;
-
-        // Verify that chaincodeID is being passed
-        if (!request.chaincodeID || request.chaincodeID === "") {
-          return cb(Error("missing chaincodeID in InvokeOrQueryRequest"));
-        }
-
-        // Create a deploy transaction
-        let tx = new _fabricProto.Transaction();
-        if (isInvokeRequest) {
-            tx.setType(_fabricProto.Transaction.Type.CHAINCODE_INVOKE);
-        } else {
-            tx.setType(_fabricProto.Transaction.Type.CHAINCODE_QUERY);
-        }
-
-        // Set the chaincodeID
-        let chaincodeID = new _chaincodeProto.ChaincodeID();
-        chaincodeID.setName(request.chaincodeID);
-        debug("newInvokeOrQueryTransaction: request=%j, chaincodeID=%s", request, JSON.stringify(chaincodeID));
-        tx.setChaincodeID(chaincodeID.toBuffer());
-
-        // Construct the ChaincodeSpec
-        let chaincodeSpec = new _chaincodeProto.ChaincodeSpec();
-        // Set Type -- GOLANG is the only chaincode language supported at this time
-        chaincodeSpec.setType(_chaincodeProto.ChaincodeSpec.Type.GOLANG);
-        // Set chaincodeID
-        chaincodeSpec.setChaincodeID(chaincodeID);
-        // Set ctorMsg
-        let chaincodeInput = new _chaincodeProto.ChaincodeInput();
-        chaincodeInput.setFunction(request.fcn);
-        chaincodeInput.setArgs(request.args);
-        chaincodeSpec.setCtorMsg(chaincodeInput);
-        // Construct the ChaincodeInvocationSpec (i.e. the payload)
-        let chaincodeInvocationSpec = new _chaincodeProto.ChaincodeInvocationSpec();
-        chaincodeInvocationSpec.setChaincodeSpec(chaincodeSpec);
-        tx.setPayload(chaincodeInvocationSpec.toBuffer());
-
-        // Set the transaction UUID
-        tx.setUuid(sdk_util.GenerateUUID());
-
-        // Set the transaction timestamp
-        tx.setTimestamp(sdk_util.GenerateTimestamp());
-
-        // Set confidentiality level
-        if (request.confidential) {
-            debug('Set confidentiality on');
-            tx.setConfidentialityLevel(_fabricProto.ConfidentialityLevel.CONFIDENTIAL)
-        } else {
-            debug('Set confidentiality on');
-            tx.setConfidentialityLevel(_fabricProto.ConfidentialityLevel.PUBLIC)
-        }
-
-        if (request.metadata) {
-            tx.setMetadata(request.metadata)
-        }
-
-        if (request.userCert) {
-            // cert based
-            let certRaw = new Buffer(self.tcert.publicKey);
-            // debug('========== Invoker Cert [%s]', certRaw.toString('hex'));
-            let nonceRaw = new Buffer(self.nonce);
-            let bindingMsg = Buffer.concat([certRaw, nonceRaw]);
-            // debug('========== Binding Msg [%s]', bindingMsg.toString('hex'));
-            this.binding = new Buffer(self.chain.cryptoPrimitives.hash(bindingMsg), 'hex');
-            // debug('========== Binding [%s]', this.binding.toString('hex'));
-            let ctor = chaincodeSpec.getCtorMsg().toBuffer();
-            // debug('========== Ctor [%s]', ctor.toString('hex'));
-            let txmsg = Buffer.concat([ctor, this.binding]);
-            // debug('========== Pyaload||binding [%s]', txmsg.toString('hex'));
-            let mdsig = self.chain.cryptoPrimitives.ecdsaSign(request.userCert.privateKey.getPrivate('hex'), txmsg);
-            let sigma = new Buffer(mdsig.toDER());
-            // debug('========== Sigma [%s]', sigma.toString('hex'));
-            tx.setMetadata(sigma)
-        }
-
-        tx = new Transaction(tx, request.chaincodeID);
-
-        return cb(null, tx);
+    
+    private Transaction invokeTransaction(InvokeOrQueryRequest request) {
+    	return createTransaction(request, protos.Fabric.Transaction.Type.CHAINCODE_INVOKE);
     }
+
+    private Transaction queryTransaction(InvokeOrQueryRequest request) {
+    	return createTransaction(request, protos.Fabric.Transaction.Type.CHAINCODE_QUERY);
+    }
+
+    private static void info(String msg, Object... params) {
+        logger.log(Level.INFO, msg, params);
+      }
+    private static void debug(String msg, Object... params) {
+        logger.log(Level.FINE, msg, params);
+      }
+
 
 }  // end TransactionContext

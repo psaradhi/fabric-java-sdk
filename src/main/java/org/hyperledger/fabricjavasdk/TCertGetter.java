@@ -1,17 +1,22 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.ArrayList;
+import java.util.Stack;
 
 // A class to get TCerts.
 // There is one class per set of attributes requested by each member.
-class TCertGetter {
+public class TCertGetter {
 
     private Chain chain;
     private Member member;
     private ArrayList<String> attrs;
     private String key;
     private MemberServices memberServices;
-    private tcerts:any[] = [];
-    private stats.Rate arrivalRate = new stats.Rate();
-    private stats.ResponseTime getTCertResponseTime = new stats.ResponseTime();
-    private getTCertWaiters:GetTCertCallback[] = [];
+    private Stack<TCert> tcerts;
+//TODO implement stats
+//    private stats.Rate arrivalRate = new stats.Rate();
+//    private stats.ResponseTime getTCertResponseTime = new stats.ResponseTime();
+//    private getTCertWaiters:GetTCertCallback[] = [];
     private boolean gettingTCerts = false;
 
     /**
@@ -25,7 +30,7 @@ class TCertGetter {
         this.key = key;
         this.chain = member.getChain();
         this.memberServices = member.getMemberServices();
-        this.tcerts = [];
+        this.tcerts = new Stack<>();
     }
 
     /**
@@ -36,32 +41,37 @@ class TCertGetter {
         return this.chain;
     };
 
-    public void getUserCert(cb:GetTCertCallback) {
-        this.getNextTCert(cb);
+    public void getUserCert() {
+        this.getNextTCert();
     }
 
     /**
     * Get the next available transaction certificate.
     * @param cb
     */
-    public void getNextTCert(cb:GetTCertCallback) {
-        let self = this;
-        self.arrivalRate.tick();
-        let tcert = self.tcerts.length > 0? self.tcerts.shift() : undefined;
-        if (tcert) {
-            return cb(null,tcert);
+    public TCert getNextTCert() {
+
+//TODO    	self.arrivalRate.tick();
+        return tcerts.size() > 0 ? tcerts.pop() : null;
+
+        //TODO implement the commented logic
+            /*
         } else {
-           if (!cb) throw Error("null callback");
             self.getTCertWaiters.push(cb);
         }
         if (self.shouldGetTCerts()) {
             self.getTCerts();
         }
+        */
     }
 
     // Determine if we should issue a request to get more tcerts now.
     private boolean shouldGetTCerts() {
-        let self = this;
+    	return false;        //TODO implement shouldGetTCerts
+
+    	
+    	/*
+    	let self = this;
         // Do nothing if we are already getting more tcerts
         if (self.gettingTCerts) {
             debug("shouldGetTCerts: no, already getting tcerts");
@@ -93,11 +103,15 @@ class TCertGetter {
         debug(util.format("shouldGetTCerts: %s, threshold=%s, count=%s, rate=%s, responseTime=%s",
         result, tcertThreshold, tcertCount, arrivalRate, responseTime));
         return result;
+        
+        */
     }
 
     // Call member services to get more tcerts
     private void getTCerts() {
-        let self = this;
+    	//TODO implement getTCerts
+    	/*
+    	let self = this;
         let req = {
             name: self.member.getName(),
             enrollment: self.member.getEnrollment(),
@@ -125,6 +139,7 @@ class TCertGetter {
                 waiter(null,self.tcerts.shift());
             }
         });
+        */
     }
 
 } // end TCertGetter

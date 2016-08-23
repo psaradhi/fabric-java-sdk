@@ -1,12 +1,12 @@
-
+package org.hyperledger.fabricjavasdk;
 /**
  * A transaction.
  */
-interface TransactionProtobuf {
+public interface TransactionProtobuf {
     String getType();
     void setCert(Buffer cert);
     void setSignature(Buffer sig);
-    void setConfidentialityLevel(number value);
+    void setConfidentialityLevel(int value);
     int  getConfidentialityLevel();
     void setConfidentialityProtocolVersion(String version);
     void setNonce(Buffer nonce);

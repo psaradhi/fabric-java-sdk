@@ -1,21 +1,30 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The class representing a chain with which the client SDK interacts.
  */
-class Chain {
+public class Chain {
+	private static final Logger logger = Logger.getLogger(Chain.class.getName());
 
     // Name of the chain is only meaningful to the client
     private String name;
 
     // The peers on this chain to which the client can connect
-    private ArrayList<Peer> peers;
+    private Vector<Peer> peers;
 
     // Security enabled flag
     private boolean securityEnabled = true;
 
     // A member cache associated with this chain
     // TODO: Make an LRU to limit size of member cache
-    private members:{[name:string]:Member} = {};
+    private Map<String, Member> members = new HashMap<>();
 
     // The number of tcerts to get in each batch
     private int tcertBatchSize = 200;
@@ -41,7 +50,7 @@ class Chain {
     private int invokeWaitTime = 5;
 
     // The crypto primitives object
-    cryptoPrimitives:crypto.Crypto;
+    Object cryptoPrimitives;
 
     public Chain(String name) {
         this.name = name;
@@ -62,14 +71,14 @@ class Chain {
      */
     public Peer addPeer(String url, String pem) {
         Peer peer = new Peer(url, this, pem);
-        this.peers.push(peer);
+        this.peers.add(peer);
         return peer;
     }
 
     /**
      * Get the peers for this chain.
      */
-    public ArrayList<Peer> getPeers() {
+    public Vector<Peer> getPeers() {
         return this.peers;
     }
 
@@ -94,7 +103,7 @@ class Chain {
      * @param {string} url Member services URL of the form: "grpc://host:port" or "grpcs://host:port"
      */
     public void setMemberServicesUrl(String url, String pem) {
-        this.setMemberServices(newMemberServices(url,pem));
+        this.setMemberServices(new MemberServicesImpl(url,pem));
     }
 
     /**
@@ -111,7 +120,7 @@ class Chain {
     public void setMemberServices(MemberServices memberServices) {
         this.memberServices = memberServices;
         if (memberServices instanceof MemberServicesImpl) {
-           this.cryptoPrimitives = (<MemberServicesImpl>memberServices).getCrypto();
+           this.cryptoPrimitives = ((MemberServicesImpl) memberServices).getCrypto();
         }
     };
 
@@ -213,16 +222,12 @@ class Chain {
      * Get the user member named 'name'.
      * @param cb Callback of form "function(err,Member)"
      */
-    public void getMember(String name, GetMemberCallback cb) {
-	final _cb = cb;
-        if (!keyValStore) throw new Exception("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
-        if (!memberServices) throw new Exceptio("No member services was found.  You must first call Chain.configureMemberServices or Chain.setMemberServices");
-        getMemberHelper(name, new GetMemberCallback() {
-		public void callback(Error err, Member member)  {
-            		if (err) return _cb(err);
-            		_cb(null, member);
-		}
-        });
+    public Member getMember(String name) {
+        if (null == keyValStore) throw new RuntimeException("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
+        if (null == memberServices) throw new RuntimeException("No member services was found.  You must first call Chain.configureMemberServices or Chain.setMemberServices");
+        getMemberHelper(name); 
+        //TODO add logic implemented in callback
+        return null; //TODO return correct member
     }
 
     /**
@@ -230,23 +235,21 @@ class Chain {
      * A user is a specific type of member.
      * Another type of member is a peer.
      */
-    void getUser(String name, GetMemberCallback cb) {
-        return this.getMember(name, cb);
+    Member getUser(String name) {
+        return getMember(name);
     }
 
     // Try to get the member from cache.
     // If not found, create a new one, restore the state if found, and then store in cache.
-    private void getMemberHelper(String namem, GetMemberCallback cb) {
+    private Member getMemberHelper(String name) {
         // Try to get the member state from the cache
-        Member member = self.members[name];
-        if (member) return cb(null, member);
+        Member member = (Member) members.get(name);
+        if (null != member) return member;
+        
         // Create the member and try to restore it's state from the key value store (if found).
-        member = new Member(name, self);
-        member.restoreState(new ErrorCallback() {
-		public void callback(Error err) {
-            		if (err) return cb(err);
-            		cb(null, member);
-        } });
+        member = new Member(name, this);
+        member.restoreState(); // TODO add logic present in callback 
+        return member;
     }
 
     /**
@@ -254,12 +257,9 @@ class Chain {
      * @param registrationRequest Registration information.
      * @param cb Callback with registration results
      */
-    public void register(RegistrationRequest registrationRequest RegisterCallback cb) {
-        getMember(registrationRequest.enrollmentID, new GetMemberCallback() {
-		public void callback(Error err, Member member) {
-            		if (err) return cb(err);
-            		member.register(registrationRequest,cb);
-        } });
+    public void register(RegistrationRequest registrationRequest) {
+        Member member = getMember(registrationRequest.enrollmentID);
+	    member.register(registrationRequest);
     }
 
     /**
@@ -269,13 +269,9 @@ class Chain {
      * @param secret The secret of the user or other member to enroll.
      * @param cb The callback to return the user or other member.
      */
-    void enroll(String name, String secret, GetMemberCallback cb) {
+    void enroll(String name, String secret) {
         Member member = getMember(name);
-        member.enroll(secret,function(err) {
-                if (err) return cb(err);
-                return cb(null,member);
-            });
-        });
+        member.enroll(secret); // TODO add logic present in callback
     }
 
     /**
@@ -284,18 +280,15 @@ class Chain {
      * @param registrationRequest Registration information.
      * @params
      */
-    void registerAndEnroll(RegistrationRequest registrationRequest, GetMemberCallback cb) {
+    Member registerAndEnroll(RegistrationRequest registrationRequest) {
         Member member = getMember(registrationRequest.enrollmentID);
         if (member.isEnrolled()) {
                debug("already enrolled");
-               return cb(null,member);
+               return member;
         }
 
-        member.registerAndEnroll(registrationRequest, function (err) {
-              if (err) return cb(err);
-              return cb(null,member);
-           });
-        });
+        member.registerAndEnroll(registrationRequest);
+        return null;//TODO add logic implemented in callback
     }
 
     /**
@@ -303,11 +296,12 @@ class Chain {
      * @param tx A transaction
      * @param eventEmitter An event emitter
      */
-    void sendTransaction(Transaction tx, events.EventEmitter eventEmitter) {
-        if (this.peers.length === 0) {
-            return eventEmitter.emit('error', new EventTransactionError(util.format("chain %s has no peers", this.getName())));
+    void sendTransaction(Transaction tx) {
+        if (this.peers.size() == 0) {
+            throw new RuntimeException(String.format("chain %s has no peers", getName()));
         }
-        Peerpeers = this.peers;
+
+        /*TODO implement sendTransaction
         let trySendTransaction = (pidx) => {
 	       if( pidx >= peers.length ) {
 		      eventEmitter.emit('error', new EventTransactionError("None of "+peers.length+" peers reponding"));
@@ -328,7 +322,18 @@ class Chain {
 		   client.destroy();
 		   peers[pidx].sendTransaction(tx, eventEmitter);
 	    });
-	}
-	trySendTransaction(0);
+		}
+		trySendTransaction(0);
+    	}
+    */
     }
+    
+    private static void info(String msg, Object... params) {
+        logger.log(Level.INFO, msg, params);
+      }
+    private static void debug(String msg, Object... params) {
+        logger.log(Level.FINE, msg, params);
+      }
+
+
 }

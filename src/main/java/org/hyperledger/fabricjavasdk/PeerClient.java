@@ -108,6 +108,23 @@ public class PeerClient {
           String.valueOf(response.getMsg().toStringUtf8()));
   }
 
+  public Response processTransaction(protos.Fabric.Transaction transaction) {
+	    Response response;
+		try {
+	      response = blockingStub.processTransaction(transaction);
+	    } catch (StatusRuntimeException e) {
+	      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+	      return null;
+	    }
+	      info("Status: \"{0}\" at {1}, {2}",
+	          response.getStatusValue(),
+	          response.getStatus().name(),
+	          String.valueOf(response.getMsg().toStringUtf8()));
+	      
+	    return response;
+	  
+  }
+  
   /**
    * Blocking unary call example.  Calls getFeature and prints the response.
    */

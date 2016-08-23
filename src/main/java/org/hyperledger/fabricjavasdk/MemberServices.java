@@ -1,3 +1,4 @@
+package org.hyperledger.fabricjavasdk;
 
 public interface MemberServices {
 
@@ -31,20 +32,20 @@ public interface MemberServices {
      * @param registrar The identity of the registar (i.e. who is performing the registration)
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
-    void register(RegistrationRequest req, Member registrar, RegisterCallback cb);
+    void register(RegistrationRequest req, Member registrar);
 
     /**
      * Enroll the member and return an opaque member object
      * @param req Enrollment request with the following fields: name, enrollmentSecret
      * @param cb Callback to report an error if it occurs.
      */
-    void enroll(EnrollmentRequest req, EnrollCallback cb);
+    void enroll(EnrollmentRequest req);
 
     /**
      * Get an array of transaction certificates (tcerts).
      * @param req A GetTCertBatchRequest
      * @param cb A GetTCertBatchCallback
      */
-    void getTCertBatch(GetTCertBatchRequest req, GetTCertBatchCallback cb);
+    void getTCertBatch(GetTCertBatchRequest req);
 
 }

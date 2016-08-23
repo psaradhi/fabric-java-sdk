@@ -1,4 +1,4 @@
-package org.hyperledger.fabric-java-sdk;
+package org.hyperledger.fabricjavasdk;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

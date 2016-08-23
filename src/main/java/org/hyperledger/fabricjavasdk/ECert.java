@@ -1,11 +1,11 @@
+package org.hyperledger.fabricjavasdk;
 
 /**
  * Enrollment certificate.
  */
-export class ECert extends Certificate {
+public class ECert extends Certificate {
 
-    constructor(public cert:Buffer,
-                public privateKey:any) {
+    public ECert(Object cert, Object privateKey) {
         super(cert, privateKey, PrivacyLevel.Nominal);
     }
 

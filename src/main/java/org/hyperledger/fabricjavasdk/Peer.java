@@ -1,13 +1,20 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import protos.Fabric.Response;
 
 /**
  * The Peer class represents a peer to which HFC sends deploy, invoke, or query requests.
  */
 class Peer {
+	private static final Logger logger = Logger.getLogger(Peer.class.getName());
 
     private String url;
     private Chain chain;
     private Endpoint ep;
-    private peerClient:any;
+    private PeerClient peerClient;
 
     /**
      * Constructor for a peer given the endpoint config for the peer.
@@ -19,7 +26,7 @@ class Peer {
         this.url = url;
         this.chain = chain;
         this.ep = new Endpoint(url,pem);
-        this.peerClient = new _fabricProto.Peer(this.ep.addr, this.ep.creds);
+        this.peerClient = new PeerClient("", 0); //TODO add the correct host and port info
     }
 
     /**
@@ -43,27 +50,30 @@ class Peer {
      * @param tx A transaction
      * @param eventEmitter The event emitter
      */
-    sendTransaction = function (tx:Transaction, eventEmitter:events.EventEmitter) {
-        var self = this;
+    public void sendTransaction(Transaction transaction) {
 
         debug("peer.sendTransaction");
 
         // Send the transaction to the peer node via grpc
         // The rpc specification on the peer side is:
         //     rpc ProcessTransaction(Transaction) returns (Response) {}
-        peerClient.processTransaction(tx.pb);
+        Response response = peerClient.processTransaction(transaction.getTransaction());
 
+        /*TODO add error check
         if (err) {
                 debug("peer.sendTransaction: error=%j", err);
                 return eventEmitter.emit('error', new EventTransactionError(err));
         }
+        */
 
-        debug("peer.sendTransaction: received %j", response);
+        debug("peer.sendTransaction: received %j", response.getMsg().toStringUtf8());
 
         // Check transaction type here, as invoke is an asynchronous call,
         // whereas a deploy and a query are synchonous calls. As such,
         // invoke will emit 'submitted' and 'error', while a deploy/query
         // will emit 'complete' and 'error'.
+
+        /* TODO handle response
         let txType = tx.pb.getType();
         switch (txType) {
            case protos.Fabric.Transaction.Type.CHAINCODE_DEPLOY: // async
@@ -110,13 +120,16 @@ class Peer {
                   eventEmitter.emit("error", new EventTransactionError("processTransaction for this transaction type is not yet implemented!"));
             }
           });
-    };
+          */
+    }
 
     /**
      * TODO: Temporary hack to wait until the deploy event has hopefully completed.
      * This does not detect if an error occurs in the peer or chaincode when deploying.
      * When peer event listening is added to the SDK, this will be implemented correctly.
      */
+
+    /*TODO check waitForDeployComplete
     private void waitForDeployComplete(events.EventEmitter eventEmitter, EventDeploySubmitted submitted) {
         let waitTime = this.chain.getDeployWaitTime();
         debug("waiting %d seconds before emitting deploy complete event",waitTime);
@@ -132,12 +145,15 @@ class Peer {
            waitTime * 1000
         );
     }
+    */
 
     /**
      * TODO: Temporary hack to wait until the deploy event has hopefully completed.
      * This does not detect if an error occurs in the peer or chaincode when deploying.
      * When peer event listening is added to the SDK, this will be implemented correctly.
      */
+    
+    /*TODO check waitForInvokeComplete
     private void waitForInvokeComplete(events.EventEmitter eventEmitter) {
         let waitTime = this.chain.getInvokeWaitTime();
         debug("waiting %d seconds before emitting invoke complete event",waitTime);
@@ -148,12 +164,21 @@ class Peer {
            waitTime * 1000
         );
     }
+    */
 
     /**
      * Remove the peer from the chain.
      */
     public void remove() {
-        throw Error("TODO: implement");
+        throw new RuntimeException("TODO: implement"); //TODO implement remove
     }
+
+    private static void info(String msg, Object... params) {
+        logger.log(Level.INFO, msg, params);
+      }
+
+    private static void debug(String msg, Object... params) {
+        logger.log(Level.FINE, msg, params);
+      }
 
 } // end Peer

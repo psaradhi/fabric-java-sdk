@@ -1,5 +1,12 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class Member {
+	private static final Logger logger = Logger.getLogger(Member.class.getName());
 
     private Chain chain;
     private String name;
@@ -11,7 +18,7 @@ class Member {
     private MemberServices memberServices;
     private KeyValStore keyValStore;
     private String keyValStoreName;
-    private tcertGetterMap: {[s:string]:TCertGetter} = {};
+    private Map<String, TCertGetter> tcertGetterMap;
     private int tcertBatchSize;
 
     /**
@@ -19,15 +26,24 @@ class Member {
      * @param cfg {string | RegistrationRequest} The member name or registration request.
      * @returns {Member} A member who is neither registered nor enrolled.
      */
-    public Member(cfg:any, Chain chain) {
-        if (util.isString(cfg)) {
-            this.name = cfg;
-        } else if (util.isObject(cfg)) {
-            let req = cfg;
+
+    public Member(String name, Chain chain) {
+    	this((Object) name, chain);
+    }
+    
+    public Member(Object cfg, Chain chain) {
+        if (cfg instanceof String) {
+            this.name = (String) cfg;
+        } else if (cfg instanceof Object) {
+
+        	/* TODO implement this logic
+        	let req = cfg;
             this.name = req.enrollmentID || req.name;
-            this.roles = req.roles || ['fabric.user'];
+            this.roles = req.roles || ["fabric.user"];
             this.account = req.account;
             this.affiliation = req.affiliation;
+            
+            */
         }
         this.chain = chain;
         this.memberServices = chain.getMemberServices();
@@ -89,7 +105,7 @@ class Member {
      * Set the account.
      * @param account The account.
      */
-    public setAccount(String account) {
+    public void setAccount(String account) {
         this.account = account;
     }
 
@@ -134,7 +150,7 @@ class Member {
      * Get the enrollment info.
      * @returns {Enrollment} The enrollment.
      */
-    getEnrollment():any {
+    public String getEnrollment() {
         return this.enrollment;
     };
 
@@ -143,7 +159,7 @@ class Member {
      * @returns {boolean} True if registered; otherwise, false.
      */
     public boolean isRegistered() {
-        return !enrollmentSecret.trim().empty();
+        return !enrollmentSecret.trim().isEmpty();
     }
 
     /**
@@ -151,26 +167,26 @@ class Member {
      * @returns {boolean} True if enrolled; otherwise, false.
      */
     public boolean isEnrolled() {
-        return !enrollment.trim().empty();
+        return !enrollment.trim().isEmpty();
     }
 
     /**
      * Register the member.
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
-    public void register(RegistrationRequest registrationRequest, RegisterCallback cb) {
-        cb = cb || nullCB;
+    public void register(RegistrationRequest registrationRequest) {
         if (!registrationRequest.enrollmentID.equals(getName())) {
             throw new RuntimeException("registration enrollment ID and member name are not equal");
         }
 
-        if (enrollmentSecret) {
+        if (null != enrollmentSecret) {
             debug("previously registered, enrollmentSecret=%s", enrollmentSecret);
-            return cb(null, enrollmentSecret);
+            return;
         }
 
-        memberServices.register(registrationRequest, self.chain.getRegistrar()); function (err, enrollmentSecret) {
+        memberServices.register(registrationRequest, chain.getRegistrar());
 
+        /* TODO implement logic present in callback function
         debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
             self.enrollmentSecret = enrollmentSecret;
             self.saveState(function (err) {
@@ -178,6 +194,7 @@ class Member {
                 cb(null, enrollmentSecret);
             });
         });
+        */
     }
 
     /**
@@ -185,17 +202,22 @@ class Member {
      * @param enrollmentSecret The password or enrollment secret as returned by register.
      * @param cb Callback to report an error if it occurs
      */
-    public void enroll(String enrollmentSecret, EnrollCallback cb) {
-        let self = this;
-        cb = cb || nullCB;
-        let enrollment = self.enrollment;
-        if (enrollment) {
+    public String enroll(String enrollmentSecret) {
+        if (null != enrollment) {
             debug("Previously enrolled, [enrollment=%j]", enrollment);
-            return cb(null,enrollment);
+            return enrollment;
         }
-        let req = {enrollmentID: self.getName(), enrollmentSecret: enrollmentSecret};
+
+        EnrollmentRequest req = new EnrollmentRequest();
+        req.setEnrollmentID(getName());
+        req.setEnrollmentSecret(enrollmentSecret);
         debug("Enrolling [req=%j]", req);
-        self.memberServices.enroll(req, function (err:Error, enrollment:Enrollment) {
+        
+        memberServices.enroll(req);
+        
+        return ""; //TODO return correct enrollment info
+        /*TODO implement callback logic
+        , function (err:Error, enrollment:Enrollment) {
             debug("[memberServices.enroll] err=%s, enrollment=%j", err, enrollment);
             if (err) return cb(err);
             self.enrollment = enrollment;
@@ -215,27 +237,30 @@ class Member {
                 cb(null, enrollment);
             });
         });
+        */
     }
 
     /**
      * Perform both registration and enrollment.
      * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
      */
-    public void registerAndEnroll(RegistrationRequest registrationRequest, cb:ErrorCallback) {
-        let self = this;
-        cb = cb || nullCB;
-        let enrollment = self.enrollment;
-        if (enrollment) {
+    public void registerAndEnroll(RegistrationRequest registrationRequest) {
+        if (null != enrollment) {
             debug("previously enrolled, enrollment=%j", enrollment);
-            return cb(null);
+            return ;
         }
-        self.register(registrationRequest, function (err, enrollmentSecret) {
+
+        register(registrationRequest);
+        
+        /* TODO implement the callback logic
+           function (err, enrollmentSecret) {
             if (err) return cb(err);
             self.enroll(enrollmentSecret, function (err, enrollment) {
                 if (err) return cb(err);
                 cb(null);
             });
         });
+        */
     }
 
     /**
@@ -246,9 +271,14 @@ class Member {
     public TransactionContext deploy(DeployRequest deployRequest) {
         debug("Member.deploy");
 
-        let tx = this.newTransactionContext();
-        tx.deploy(deployRequest);
-        return tx;
+        try {
+        	TransactionContext tx =  newTransactionContext(null);
+        	tx.deploy(deployRequest);
+        	return tx; 
+        } catch(Exception e) {
+        	//TODO Emit events 
+        	return null;
+        }
     }
 
     /**
@@ -259,7 +289,7 @@ class Member {
     public TransactionContext invoke(InvokeRequest invokeRequest) {
         debug("Member.invoke");
 
-        TransactionContext tx = newTransactionContext();
+        TransactionContext tx = newTransactionContext(null);
         tx.invoke(invokeRequest);
         return tx;
     }
@@ -272,7 +302,7 @@ class Member {
     public TransactionContext query(QueryRequest queryRequest) {
         debug("Member.query");
 
-        var tx = this.newTransactionContext();
+        TransactionContext tx = this.newTransactionContext(null);
         tx.query(queryRequest);
         return tx;
     }
@@ -283,7 +313,7 @@ class Member {
      * @param {Object} tcert A transaction certificate from member services.  This is optional.
      * @returns A transaction context.
      */
-    public TransactionContext newTransactionContext(tcert?:TCert) {
+    public TransactionContext newTransactionContext(TCert tcert) {
         return new TransactionContext(this, tcert);
     }
 
@@ -292,17 +322,18 @@ class Member {
      * @param attrs The names of attributes to include in the user certificate.
      * @param cb A GetTCertCallback
      */
-    public void getUserCert(attrs:string[], cb:GetTCertCallback) {
-        this.getNextTCert(attrs,cb);
+    public void getUserCert(String[] attrs) {
+        this.getNextTCert(attrs);
     }
 
     /**
    * Get the next available transaction certificate with the appropriate attributes.
    * @param cb
    */
-   public void getNextTCert(attrs:string[], cb:GetTCertCallback) {
-        let self = this;
-        if (!self.isEnrolled()) {
+   public void getNextTCert(String[] attrs) {
+
+	   /*TODO implement getNextTCert
+	   if (!self.isEnrolled()) {
             return cb(Error(util.format("user '%s' is not enrolled",self.getName())));
         }
         let key = getAttrsKey(attrs);
@@ -314,31 +345,27 @@ class Member {
             self.tcertGetterMap[key] = tcertGetter;
         }
         return tcertGetter.getNextTCert(cb);
+        */
    }
 
    /**
     * Save the state of this member to the key value store.
     * @param cb Callback of the form: {function(err}
     */
-   public void saveState(cb:ErrorCallback) {
-      let self = this;
-      self.keyValStore.setValue(self.keyValStoreName, self.toString(), cb);
+   public void saveState() {
+      keyValStore.setValue(keyValStoreName, this.toString());
    }
 
    /**
     * Restore the state of this member from the key value store (if found).  If not found, do nothing.
     * @param cb Callback of the form: function(err}
     */
-   public void restoreState(cb:ErrorCallback) {
-      keyValStore.getValue(self.keyValStoreName, function (err, memberStr) {
-         if (err) return cb(err);
-         // debug("restoreState: name=%s, memberStr=%s", self.getName(), memberStr);
-         if (memberStr) {
+   public void restoreState() {
+      String memberStr = keyValStore.getValue(keyValStoreName);
+      if(null != memberStr) {
              // The member was found in the key value store, so restore the state.
-             self.fromString(memberStr);
+             fromString(memberStr);
          }
-         cb(null);
-      });
    }
 
     /**
@@ -346,8 +373,9 @@ class Member {
      * @return {string} The state of this member as a string
      */
     public void fromString(String str) {
-        let state = JSON.parse(str);
-        if (state.name !== this.getName()) throw Error("name mismatch: '" + state.name + "' does not equal '" + this.getName() + "'");
+//        Member state = JSON.parse(str);
+    	Member state = null; //TODO implement JSON.parse()
+        if (state.name != this.getName()) throw new RuntimeException("name mismatch: '" + state.name + "' does not equal '" + this.getName() + "'");
         this.name = state.name;
         this.roles = state.roles;
         this.account = state.account;
@@ -361,6 +389,7 @@ class Member {
      * @return {string} The state of this member as a string
      */
     public String toString() {
+    	/*TODO implement toString()
         let state = {
             name: self.name,
             roles: self.roles,
@@ -370,6 +399,19 @@ class Member {
             enrollment: self.enrollment
         };
         return JSON.stringify(state);
+        */
+    	return "";
     }
+
+    String toKeyValStoreName(String name) {
+        return "member." + name;
+    }
+
+    private static void info(String msg, Object... params) {
+        logger.log(Level.INFO, msg, params);
+      }
+    private static void debug(String msg, Object... params) {
+        logger.log(Level.FINE, msg, params);
+      }
 
 }

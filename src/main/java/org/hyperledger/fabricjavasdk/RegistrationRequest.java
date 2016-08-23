@@ -1,9 +1,12 @@
+package org.hyperledger.fabricjavasdk;
+
+import java.util.ArrayList;
 
 /**
  * A registration request is information required to register a user, peer, or other
  * type of member.
  */
-public interface RegistrationRequest {
+public class RegistrationRequest {
     // The enrollment ID of the member
     String enrollmentID;
     // Roles associated with this member.
@@ -14,10 +17,14 @@ public interface RegistrationRequest {
     String affiliation;
     // 'registrar' enables this identity to register other members with types
     // and can delegate the 'delegationRoles' roles
+ 
+    //TODO uncomment registrar
+    /*
     registrar?:{
         // The allowable roles which this member can register
         roles:string[],
         // The allowable roles which can be registered by members registered by this member
         delegateRoles?:string[]
     };
+    */
 }

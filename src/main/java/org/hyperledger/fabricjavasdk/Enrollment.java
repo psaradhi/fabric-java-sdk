@@ -1,7 +1,8 @@
+package org.hyperledger.fabricjavasdk;
 
 // Enrollment metadata
-interface Enrollment {
-    key:Buffer;
-    cert:string;
-    chainKey:string;
+public class Enrollment {
+    Buffer key;
+    String cert;
+    String chainKey;
 }

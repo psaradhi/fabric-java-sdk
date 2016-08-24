@@ -17,7 +17,7 @@ public class Chain {
     private String name;
 
     // The peers on this chain to which the client can connect
-    private Vector<Peer> peers;
+    private Vector<Peer> peers = new Vector<>();
 
     // Security enabled flag
     private boolean securityEnabled = true;
@@ -225,9 +225,9 @@ public class Chain {
     public Member getMember(String name) {
         if (null == keyValStore) throw new RuntimeException("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
         if (null == memberServices) throw new RuntimeException("No member services was found.  You must first call Chain.configureMemberServices or Chain.setMemberServices");
-        getMemberHelper(name); 
+        return getMemberHelper(name); 
         //TODO add logic implemented in callback
-        return null; //TODO return correct member
+//        return null; //TODO return correct member
     }
 
     /**
@@ -288,7 +288,7 @@ public class Chain {
         }
 
         member.registerAndEnroll(registrationRequest);
-        return null;//TODO add logic implemented in callback
+        return member;//TODO add logic implemented in callback
     }
 
     /**
@@ -301,6 +301,9 @@ public class Chain {
             throw new RuntimeException(String.format("chain %s has no peers", getName()));
         }
 
+        for(Peer peer : peers) {
+        	peer.sendTransaction(tx);
+        }
         /*TODO implement sendTransaction
         let trySendTransaction = (pidx) => {
 	       if( pidx >= peers.length ) {

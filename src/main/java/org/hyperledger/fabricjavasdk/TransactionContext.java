@@ -476,7 +476,7 @@ class TransactionContext  {
         				
         // Construct the ChaincodeSpec
         ChaincodeSpec chaincodeSpec = protos.Chaincode.ChaincodeSpec.newBuilder()
-        		.setType(protos.Chaincode.ChaincodeSpec.Type.JAVA)
+        		.setType(protos.Chaincode.ChaincodeSpec.Type.GOLANG)
         		.setChaincodeID(chaincodeID)
         		.setCtorMsg(chaincodeInput)
         		.build();

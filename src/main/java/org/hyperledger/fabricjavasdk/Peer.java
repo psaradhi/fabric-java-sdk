@@ -26,7 +26,7 @@ class Peer {
         this.url = url;
         this.chain = chain;
         this.ep = new Endpoint(url,pem);
-        this.peerClient = new PeerClient("", 0); //TODO add the correct host and port info
+        this.peerClient = new PeerClient("localhost", 7051); //TODO add the correct host and port info
     }
 
     /**

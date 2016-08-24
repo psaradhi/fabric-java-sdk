@@ -1,10 +1,13 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * MemberServicesImpl is the default implementation of a member services client.
  */
 class MemberServicesImpl implements MemberServices {
+	private static final Logger logger = Logger.getLogger(MemberServices.class.getName());
 
     private Object ecaaClient;
     private Object ecapClient;
@@ -78,6 +81,7 @@ class MemberServicesImpl implements MemberServices {
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
     public void register(RegistrationRequest req, Member registrar) {
+    	info("TODO: implement registering with member services");
     }       
     	/* TODO implement register
     	let self = this;
@@ -344,6 +348,14 @@ class MemberServicesImpl implements MemberServices {
         */
 
     } // end processTCertBatch
+    
+    private static void info(String msg, Object... params) {
+        logger.log(Level.INFO, msg, params);
+      }
+    private static void debug(String msg, Object... params) {
+        logger.log(Level.FINE, msg, params);
+      }
+
 
 } // end MemberServicesImpl
 

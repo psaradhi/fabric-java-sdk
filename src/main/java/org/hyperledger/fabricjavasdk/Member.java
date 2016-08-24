@@ -14,7 +14,7 @@ class Member {
     private String account;
     private String affiliation;
     private String enrollmentSecret;
-    private String enrollment;
+    private String enrollment = "";
     private MemberServices memberServices;
     private KeyValStore keyValStore;
     private String keyValStoreName;

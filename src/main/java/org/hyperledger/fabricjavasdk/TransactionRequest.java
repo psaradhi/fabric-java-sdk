@@ -22,4 +22,54 @@ public class TransactionRequest {
     Certificate userCert;
     // Optionally provide additional metadata
     Buffer metadata;
+    
+    
+	public String getChaincodePath() {
+		return chaincodePath;
+	}
+	public void setChaincodePath(String chaincodePath) {
+		this.chaincodePath = chaincodePath;
+	}
+	public String getChaincodeName() {
+		return chaincodeName;
+	}
+	public void setChaincodeName(String chaincodeName) {
+		this.chaincodeName = chaincodeName;
+	}
+	public String getChaincodeID() {
+		return chaincodeID;
+	}
+	public void setChaincodeID(String chaincodeID) {
+		this.chaincodeID = chaincodeID;
+	}
+	public String getFcn() {
+		return fcn;
+	}
+	public void setFcn(String fcn) {
+		this.fcn = fcn;
+	}
+	public ArrayList<String> getArgs() {
+		return args;
+	}
+	public void setArgs(ArrayList<String> args) {
+		this.args = args;
+	}
+	public boolean isConfidential() {
+		return confidential;
+	}
+	public void setConfidential(boolean confidential) {
+		this.confidential = confidential;
+	}
+	public Certificate getUserCert() {
+		return userCert;
+	}
+	public void setUserCert(Certificate userCert) {
+		this.userCert = userCert;
+	}
+	public Buffer getMetadata() {
+		return metadata;
+	}
+	public void setMetadata(Buffer metadata) {
+		this.metadata = metadata;
+	}
 }

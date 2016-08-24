@@ -15,6 +15,7 @@ class Peer {
     private Chain chain;
     private Endpoint ep;
     private PeerClient peerClient;
+    private DevopsClient devopsClient;
 
     /**
      * Constructor for a peer given the endpoint config for the peer.
@@ -27,6 +28,7 @@ class Peer {
         this.chain = chain;
         this.ep = new Endpoint(url,pem);
         this.peerClient = new PeerClient("localhost", 7051); //TODO add the correct host and port info
+        this.devopsClient = new DevopsClient("localhost", 7051); //TODO add the correct host and port info
     }
 
     /**
@@ -43,6 +45,19 @@ class Peer {
      */
     public String getUrl() {
         return this.url;
+    }
+
+    
+    public void query(QueryRequest request) {
+    	devopsClient.query(request);
+    }
+
+    public void invoke(InvokeRequest request) {
+    	devopsClient.invoke(request);
+    }
+
+    public void deploy(DeployRequest request) {
+    	devopsClient.deploy(request);
     }
 
     /**

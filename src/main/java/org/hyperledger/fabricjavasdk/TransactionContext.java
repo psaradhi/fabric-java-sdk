@@ -9,6 +9,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 
 import protos.Chaincode.ChaincodeDeploymentSpec;
+import protos.Chaincode.ChaincodeDeploymentSpec.ExecutionEnvironment;
 import protos.Chaincode.ChaincodeInput;
 import protos.Chaincode.ChaincodeSpec;
 import protos.Chaincode.ConfidentialityLevel;
@@ -458,7 +459,7 @@ class TransactionContext  {
 
     	//Construct the chaincodeID
         protos.Chaincode.ChaincodeID chaincodeID =  protos.Chaincode.ChaincodeID.newBuilder()
-        		.setName(request.chaincodeName)
+        		.setPath(request.chaincodePath)
         		.build();
 //        debug("newDevModeTransaction: chaincodeID: " + JSON.stringify(chaincodeID));
 
@@ -486,6 +487,7 @@ class TransactionContext  {
         
         ChaincodeDeploymentSpec chaincodeDeploymentSpec = protos.Chaincode.ChaincodeDeploymentSpec.newBuilder()
         		.setChaincodeSpec(chaincodeSpec)
+        		.setExecEnv(ExecutionEnvironment.DOCKER)
         		.build();
 
         ConfidentialityLevel confidentialityLevel = request.confidential ? protos.Chaincode.ConfidentialityLevel.CONFIDENTIAL : protos.Chaincode.ConfidentialityLevel.PUBLIC;

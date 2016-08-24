@@ -134,6 +134,7 @@ public class PeerClient {
     protos.Chaincode.ChaincodeID cid = protos.Chaincode.ChaincodeID
 			.newBuilder()
 			.setName("mycc")
+			.setPath("")
 			.build();
 
 

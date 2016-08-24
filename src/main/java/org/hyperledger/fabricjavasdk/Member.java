@@ -268,17 +268,10 @@ class Member {
      * @param deployRequest {Object}
      * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
      */
-    public TransactionContext deploy(DeployRequest deployRequest) {
+    public void deploy(DeployRequest deployRequest) {
         debug("Member.deploy");
 
-        try {
-        	TransactionContext tx =  newTransactionContext(null);
-        	tx.deploy(deployRequest);
-        	return tx; 
-        } catch(Exception e) {
-        	//TODO Emit events 
-        	return null;
-        }
+        getChain().getPeers().get(0).deploy(deployRequest); //TODO add error checks
     }
 
     /**
@@ -286,12 +279,10 @@ class Member {
      * @param invokeRequest {Object}
      * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
      */
-    public TransactionContext invoke(InvokeRequest invokeRequest) {
+    public void invoke(InvokeRequest invokeRequest) {
         debug("Member.invoke");
 
-        TransactionContext tx = newTransactionContext(null);
-        tx.invoke(invokeRequest);
-        return tx;
+        getChain().getPeers().get(0).invoke(invokeRequest); //TODO add error checks
     }
 
     /**
@@ -299,12 +290,10 @@ class Member {
      * @param queryRequest {Object}
      * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
      */
-    public TransactionContext query(QueryRequest queryRequest) {
+    public void query(QueryRequest queryRequest) {
         debug("Member.query");
 
-        TransactionContext tx = this.newTransactionContext(null);
-        tx.query(queryRequest);
-        return tx;
+        getChain().getPeers().get(0).query(queryRequest); //TODO add error checks
     }
 
     /**

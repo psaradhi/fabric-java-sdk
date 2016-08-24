@@ -25,7 +25,7 @@ public class TransactionRequest {
     
     
 	public String getChaincodePath() {
-		return chaincodePath;
+		return null == chaincodePath ? "" : chaincodePath;
 	}
 	public void setChaincodePath(String chaincodePath) {
 		this.chaincodePath = chaincodePath;

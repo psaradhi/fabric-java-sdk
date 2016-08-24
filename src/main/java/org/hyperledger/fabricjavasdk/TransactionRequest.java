@@ -17,7 +17,7 @@ public class TransactionRequest {
     // The arguments to pass to the chaincode invocation
     ArrayList<String> args;
     // Specify whether the transaction is confidential or not.  The default value is false.
-    boolean confidential;
+    boolean confidential = false;
     // Optionally provide a user certificate which can be used by chaincode to perform access control
     Certificate userCert;
     // Optionally provide additional metadata

@@ -31,10 +31,10 @@ public class FileKeyValStore implements KeyValStore {
 	    	properties.load(input);
 	    	return (String) properties.getProperty(name);
     	} catch(FileNotFoundException e) {
-    		e.printStackTrace(); //TODO log this error
+//    		e.printStackTrace(); //TODO log this error
     		return null;
     	} catch(IOException e) {
-    		e.printStackTrace(); //TODO log this error
+//    		e.printStackTrace(); //TODO log this error
     		return null;
     	}
     }
@@ -53,7 +53,7 @@ public class FileKeyValStore implements KeyValStore {
     	    	properties.store(output, null);
     	    	
         	} catch(IOException e) {
-        		e.printStackTrace(); //TODO log this error
+//        		e.printStackTrace(); //TODO log this error
         		return;
         	}
     }

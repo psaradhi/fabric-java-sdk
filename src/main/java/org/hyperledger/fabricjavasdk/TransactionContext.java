@@ -494,6 +494,8 @@ class TransactionContext  {
         		.setType(transactionType)
         		.setChaincodeID(chaincodeID.toByteString())
         		.setPayload(chaincodeDeploymentSpec.toByteString())
+        		.setTxid("aaa")
+        		.setTimestamp(Timestamp.getDefaultInstance())
 //TODO        		.setMetadata(request.metadata)
         		.build();
 

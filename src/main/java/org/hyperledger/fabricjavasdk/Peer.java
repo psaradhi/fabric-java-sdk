@@ -12,8 +12,7 @@ class Peer {
 	private static final Logger logger = Logger.getLogger(Peer.class.getName());
 
     private String url;
-    private Chain chain;
-    private Endpoint ep;
+    private Chain chain;    
     private PeerClient peerClient;
     private DevopsClient devopsClient;
 
@@ -25,10 +24,10 @@ class Peer {
      */
     public Peer(String url, Chain chain, String pem) {
         this.url = url;
-        this.chain = chain;
-        this.ep = new Endpoint(url,pem);
-        this.peerClient = new PeerClient("localhost", 7051); //TODO add the correct host and port info
-        this.devopsClient = new DevopsClient("localhost", 7051); //TODO add the correct host and port info
+        this.chain = chain;   
+        Endpoint ep = new Endpoint(url, pem);
+        this.peerClient = new PeerClient(ep.getChannelBuilder());
+        this.devopsClient = new DevopsClient(ep.getChannelBuilder());
     }
 
     /**

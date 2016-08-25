@@ -32,11 +32,7 @@ public class PeerClient {
   private final PeerBlockingStub blockingStub;
   private final PeerStub asyncStub;
 
-  /** Construct client for accessing Peer server at {@code host:port}. */
-  public PeerClient(String host, int port) {
-    this(ManagedChannelBuilder.forAddress(host, port).usePlaintext(true));
-  }
-
+  
   /** Construct client for accessing Peer server using the existing channel. */
   public PeerClient(ManagedChannelBuilder<?> channelBuilder) {
     channel = channelBuilder.build();
@@ -193,7 +189,8 @@ public class PeerClient {
   /** Issues several different requests and then exits. */
   public static void main(String[] args) throws InterruptedException {
 
-    PeerClient client = new PeerClient("localhost", 7051);
+	Endpoint ep = new Endpoint("grpc://localhost:7051", null);
+    PeerClient client = new PeerClient(ep.getChannelBuilder());
     try {
       client.deploy();
       client.query();

@@ -40,12 +40,7 @@ public class DevopsClient {
   private final ManagedChannel channel;
   private final DevopsBlockingStub blockingStub;
   private final DevopsStub asyncStub;
-
-  /** Construct client for accessing Peer server at {@code host:port}. */
-  public DevopsClient(String host, int port) {
-    this(ManagedChannelBuilder.forAddress(host, port).usePlaintext(true));
-  }
-
+  
   /** Construct client for accessing Peer server using the existing channel. */
   public DevopsClient(ManagedChannelBuilder<?> channelBuilder) {
     channel = channelBuilder.build();
@@ -184,7 +179,8 @@ public class DevopsClient {
   /** Issues several different requests and then exits. */
   public static void main(String[] args) throws InterruptedException {
 
-    DevopsClient client = new DevopsClient("localhost", 7051);
+	Endpoint ep = new Endpoint("grpc://localhost:7051", null);
+    DevopsClient client = new DevopsClient(ep.getChannelBuilder());
     try {
       client.deploy();
       client.query();

@@ -1,5 +1,6 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,8 +102,9 @@ public class Chain {
     /**
      * Set the member services URL
      * @param {string} url Member services URL of the form: "grpc://host:port" or "grpcs://host:port"
+     * @throws CertificateException 
      */
-    public void setMemberServicesUrl(String url, String pem) {
+    public void setMemberServicesUrl(String url, String pem) throws CertificateException {
         this.setMemberServices(new MemberServicesImpl(url,pem));
     }
 
@@ -220,7 +222,6 @@ public class Chain {
 
     /**
      * Get the user member named 'name'.
-     * @param cb Callback of form "function(err,Member)"
      */
     public Member getMember(String name) {
         if (null == keyValStore) throw new RuntimeException("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
@@ -269,9 +270,10 @@ public class Chain {
      * @param secret The secret of the user or other member to enroll.
      * @param cb The callback to return the user or other member.
      */
-    void enroll(String name, String secret) {
-        Member member = getMember(name);
+    void enroll(String name, String secret) {    	
+        Member member = getMember(name);        
         member.enroll(secret); // TODO add logic present in callback
+        members.put(name, member);
     }
 
     /**

@@ -1,7 +1,52 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.CryptoPrimitive;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Timestamp;
+
+import io.netty.util.internal.StringUtil;
+import protos.*;
+import protos.Ca.CryptoType;
+import protos.Ca.ECertCreateReq;
+import protos.Ca.ECertCreateReqOrBuilder;
+import protos.Ca.ECertCreateResp;
+import protos.Ca.Identity;
+import protos.Ca.PublicKey;
+import protos.Ca.RegisterUserReq;
+import protos.Ca.RegisterUserReqOrBuilder;
+import protos.Ca.Registrar;
+import protos.Ca.Signature;
+import protos.Ca.Token;
+import protos.ECAAGrpc.ECAABlockingStub;
+import protos.ECAPGrpc.ECAPBlockingStub;
+import protos.TCAPGrpc.TCAPBlockingStub;
+import protos.TLSCAPGrpc.TLSCAPBlockingStub;
 
 /**
  * MemberServicesImpl is the default implementation of a member services client.
@@ -9,32 +54,35 @@ import java.util.logging.Logger;
 class MemberServicesImpl implements MemberServices {
 	private static final Logger logger = Logger.getLogger(MemberServices.class.getName());
 
-    private Object ecaaClient;
-    private Object ecapClient;
-    private Object tcapClient;
-    private Object tlscapClient;
-    private Object cryptoPrimitives;
+    private ECAABlockingStub ecaaClient;
+    private ECAPBlockingStub ecapClient;
+    private TCAPBlockingStub tcapClient;
+    private TLSCAPBlockingStub tlscapClient;
+    private CryptoPrimitives cryptoPrimitives;
+    
+    private int DEFAULT_SECURITY_LEVEL = 256;
+	private String DEFAULT_HASH_ALGORITHM = "SHA3";
 
     /**
      * MemberServicesImpl constructor
      * @param config The config information required by this member services implementation.
+     * @throws CertificateException 
      * @returns {MemberServices} A MemberServices object.
      */
-    public MemberServicesImpl(String url, String pem) {
-
-    	/*TODO implement MemberServicesImpl constructor
-    	let ep = new Endpoint(url,pem);
-        var options = {
-              "grpc.ssl_target_name_override" : "tlsca",
-              ""grpc.default_authority": ""tlsca"
-        };
-        this.ecaaClient = new _caProto.ECAA(ep.addr, ep.creds, options);
-        this.ecapClient = new _caProto.ECAP(ep.addr, ep.creds, options);
-        this.tcapClient = new _caProto.TCAP(ep.addr, ep.creds, options);
-        this.tlscapClient = new _caProto.TLSCAP(ep.addr, ep.creds, options);
-        this.cryptoPrimitives = new crypto.Crypto(DEFAULT_HASH_ALGORITHM, DEFAULT_SECURITY_LEVEL);
+    public MemberServicesImpl(String url, String pem) throws CertificateException {
+    	Endpoint ep = new Endpoint(url, pem);
+    	
+    	//TODO: How to pass options to stubs?
+//    	var options = {
+//                "grpc.ssl_target_name_override" : "tlsca",
+//                ""grpc.default_authority": ""tlsca"
+//          };
+    	this.ecaaClient = ECAAGrpc.newBlockingStub(ep.getChannelBuilder().build());
+    	this.ecapClient = ECAPGrpc.newBlockingStub(ep.getChannelBuilder().build());
+    	this.tcapClient = TCAPGrpc.newBlockingStub(ep.getChannelBuilder().build());
+    	this.tlscapClient = TLSCAPGrpc.newBlockingStub(ep.getChannelBuilder().build());
+    	this.cryptoPrimitives = new CryptoPrimitives(DEFAULT_HASH_ALGORITHM, DEFAULT_SECURITY_LEVEL);        
         
-        */
     }
 
     /**
@@ -42,7 +90,7 @@ class MemberServicesImpl implements MemberServices {
      * @returns The security level
      */
     public int getSecurityLevel() {
-        return 0; //TODO return this.cryptoPrimitives.getSecurityLevel();
+        return cryptoPrimitives.getSecurityLevel();
     }
 
     /**
@@ -50,7 +98,7 @@ class MemberServicesImpl implements MemberServices {
      * @params securityLevel The security level
      */
     public void setSecurityLevel(int securityLevel) {
-        //TODO this.cryptoPrimitives.setSecurityLevel(securityLevel);
+        this.cryptoPrimitives.setSecurityLevel(securityLevel);
     }
 
     /**
@@ -58,8 +106,7 @@ class MemberServicesImpl implements MemberServices {
      * @returns {string} The hash algorithm
      */
     public String getHashAlgorithm() {
-        //TODO return this.cryptoPrimitives.getHashAlgorithm();
-    	return ""; //TODO return the correct hash algorithm
+        return this.cryptoPrimitives.getHashAlgorithm();    	
     }
 
     /**
@@ -67,11 +114,11 @@ class MemberServicesImpl implements MemberServices {
      * @params hashAlgorithm The hash algorithm ('SHA2' or 'SHA3')
      */
     public void setHashAlgorithm(String hashAlgorithm) {
-        //TODO this.cryptoPrimitives.setHashAlgorithm(hashAlgorithm);
+        this.cryptoPrimitives.setHashAlgorithm(hashAlgorithm);
     }
 
-    public Object getCrypto() {
-        return null; //TODO return this.cryptoPrimitives;
+    public CryptoPrimitives getCrypto() {
+        return this.cryptoPrimitives;
     }
 
     /**
@@ -81,7 +128,64 @@ class MemberServicesImpl implements MemberServices {
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
     public void register(RegistrationRequest req, Member registrar) {
-    	info("TODO: implement registering with member services");
+    	if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) {
+    		throw new IllegalArgumentException("EntrollmentID cannot be null or empty");
+    	}
+    	
+    	if (registrar == null) {
+    		throw new IllegalArgumentException("Registrar should be a valid member");
+    	}
+    	
+    	    	
+    	Registrar reg = Registrar.newBuilder()
+    			.setId(
+    					Identity.newBuilder()
+    					.setId(registrar.getName())
+    					.build())
+    			.build(); //TODO: set Roles and Delegate Roles
+    	
+    	RegisterUserReq.Builder regReqBuilder = RegisterUserReq.newBuilder();
+    	regReqBuilder.setId(
+    					Identity.newBuilder()
+    					.setId(req.getEnrollmentID())
+    					.build());
+    	regReqBuilder.setRoleValue(rolesToMask(req.getRoles()));
+    	regReqBuilder.setAffiliation(req.getAffiliation());
+    	regReqBuilder.setRegistrar(reg);
+    	
+    	RegisterUserReq registerReq = regReqBuilder.build();
+    	byte[] buffer = registerReq.toByteArray();
+    	
+    	try {
+			PrivateKey signKey = cryptoPrimitives.ecdsaKeyFromPrivate(Hex.decode(registrar.getEnrollment().getKey()));
+	    	debug("Retreived private key");
+			BigInteger[] signature = cryptoPrimitives.ecdsaSign(signKey, buffer);
+	    	debug("Signed the request with key");
+			Signature sig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(signature[0].toByteArray())).setS(ByteString.copyFrom(signature[1].toByteArray())).build();
+			regReqBuilder.setSig(sig);
+	    	debug("Now sendingt register request");
+			Token token = this.ecaaClient.registerUser(regReqBuilder.build());
+			
+	    	debug("User registered with token:"+token.getTok());
+	    	
+	    	
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     }       
     	/* TODO implement register
     	let self = this;
@@ -106,6 +210,7 @@ class MemberServicesImpl implements MemberServices {
         protoReq.setRegistrar(protoRegistrar);
         // Sign the registration request
         var buf = protoReq.toBuffer();
+        
         var signKey = self.cryptoPrimitives.ecdsaKeyFromPrivate(registrar.getEnrollment().key, "hex");
         var sig = self.cryptoPrimitives.ecdsaSign(signKey, buf);
         protoReq.setSig( new _caProto.Signature(
@@ -123,104 +228,93 @@ class MemberServicesImpl implements MemberServices {
         */
  
 
-    /**
+   
+	/**
      * Enroll the member and return an opaque member object
      * @param req Enrollment request with the following fields: name, enrollmentSecret
      * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
      */
-    public void enroll(EnrollmentRequest req) {
+    public Enrollment enroll(EnrollmentRequest req) {
     	
-    	/*TODO implement enroll
-        let self = this;
-        cb = cb || nullCB;
-
+    	
         debug("[MemberServicesImpl.enroll] [%j]", req);
-        if (!req.enrollmentID) return cb(Error("req.enrollmentID is not set"));
-        if (!req.enrollmentSecret) return cb(Error("req.enrollmentSecret is not set"));
+        if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) { throw new RuntimeException("req.enrollmentID is not set");}
+        if (StringUtil.isNullOrEmpty(req.getEnrollmentSecret())) { throw new RuntimeException("req.enrollmentSecret is not set");}
 
         debug("[MemberServicesImpl.enroll] Generating keys...");
 
-        // generate ECDSA keys: signing and encryption keys
-        // 1) signing key
-        var signingKeyPair = self.cryptoPrimitives.ecdsaKeyGen();
-        var spki = new asn1.x509.SubjectPublicKeyInfo(signingKeyPair.pubKeyObj);
-        // 2) encryption key
-        var encryptionKeyPair = self.cryptoPrimitives.ecdsaKeyGen();
-        var spki2 = new asn1.x509.SubjectPublicKeyInfo(encryptionKeyPair.pubKeyObj);
+        try {
+	        // generate ECDSA keys: signing and encryption keys        
+	        KeyPair signingKeyPair = cryptoPrimitives.ecdsaKeyGen();
+	        KeyPair encryptionKeyPair = cryptoPrimitives.ecdsaKeyGen();
+	
+	        debug("[MemberServicesImpl.enroll] Generating keys...done!");
+	
+	        // create the proto message
+	        ECertCreateReq.Builder eCertCreateRequestBuilder = ECertCreateReq.newBuilder()
+	        		.setTs(Timestamp.newBuilder().setSeconds(new java.util.Date().getTime()))
+	        		.setId(Identity.newBuilder()
+	    					.setId(req.getEnrollmentID())
+	    					.build())
+	        		.setTok(Token.newBuilder().setTok(ByteString.copyFrom(req.getEnrollmentSecret(), "UTF8")))
+	        		.setSign(PublicKey.newBuilder().setKey(ByteString.copyFrom(signingKeyPair.getPublic().getEncoded())).setType(CryptoType.ECDSA))
+	        		.setEnc(PublicKey.newBuilder().setKey(ByteString.copyFrom(encryptionKeyPair.getPublic().getEncoded())).setType(CryptoType.ECDSA));
+	        
+	        ECertCreateResp eCertCreateResp = this.ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
+	        
+	        byte[] cipherText = eCertCreateResp.getTok().getTok().toByteArray();	        
+	        debug("Cipher text = "+StringUtil.toHexString(cipherText));
+//            byte[] decryptedTokBytes = cryptoPrimitives.eciesDecrypt(encryptionKeyPair, cipherText);            
+//            byte[] buf = eCertCreateRequestBuilder.setTok(Token.newBuilder().setTok(ByteString.copyFrom(decryptedTokBytes))).build().toByteArray();
+//            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);            
+//            eCertCreateRequestBuilder.setSig(Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build());
+//            
+////            ECertCreateResp 
+//            eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
 
-        debug("[MemberServicesImpl.enroll] Generating keys...done!");
-
-        // create the proto message
-        var eCertCreateRequest = new _caProto.ECertCreateReq();
-        var timestamp = sdk_util.GenerateTimestamp();
-        eCertCreateRequest.setTs(timestamp);
-        //TODO setId eCertCreateRequest.setId({id: req.enrollmentID});
-        //TODO setTok eCertCreateRequest.setTok({tok: new Buffer(req.enrollmentSecret)});
-
-        debug("[MemberServicesImpl.enroll] Generating request! %j", spki.getASN1Object().getEncodedHex());
-
-        // public signing key (ecdsa)
-        var signPubKey = new _caProto.PublicKey(
-            {
-                type: _caProto.CryptoType.ECDSA,
-                key: new Buffer(spki.getASN1Object().getEncodedHex(), "hex")
-            });
-        eCertCreateRequest.setSign(signPubKey);
-
-        debug("[MemberServicesImpl.enroll] Adding signing key!");
-
-        // public encryption key (ecdsa)
-        var encPubKey = new _caProto.PublicKey(
-            {
-                type: _caProto.CryptoType.ECDSA,
-                key: new Buffer(spki2.getASN1Object().getEncodedHex(), "hex")
-            });
-        eCertCreateRequest.setEnc(encPubKey);
-
-        debug("[MemberServicesImpl.enroll] Assding encryption key!");
-
-        debug("[MemberServicesImpl.enroll] [Contact ECA] %j ", eCertCreateRequest);
-        self.ecapClient.createCertificatePair(eCertCreateRequest, function (err, eCertCreateResp) {
-            if (err) {
-                debug("[MemberServicesImpl.enroll] failed to create cert pair: err=%j", err);
-                return cb(err);
-            }
-            let cipherText = eCertCreateResp.tok.tok;
-            var decryptedTokBytes = self.cryptoPrimitives.eciesDecrypt(encryptionKeyPair.prvKeyObj, cipherText);
-
-            //debug(decryptedTokBytes);
-            // debug(decryptedTokBytes.toString());
-            // debug('decryptedTokBytes [%s]', decryptedTokBytes.toString());
-            //TODO setTok eCertCreateRequest.setTok({tok: decryptedTokBytes});
-            eCertCreateRequest.setSig(null);
-
-            var buf = eCertCreateRequest.toBuffer();
-
-            var signKey = self.cryptoPrimitives.ecdsaKeyFromPrivate(signingKeyPair.prvKeyObj.prvKeyHex, "hex");
-            //debug(new Buffer(sha3_384(buf),"hex"));
-            var sig = self.cryptoPrimitives.ecdsaSign(signKey, buf);
-
-            eCertCreateRequest.setSig(new _caProto.Signature(
-                {
-                    type: _caProto.CryptoType.ECDSA,
-                    r: new Buffer(sig.r.toString()),
-                    s: new Buffer(sig.s.toString())
-                }
-            ));
-            self.ecapClient.createCertificatePair(eCertCreateRequest, function (err, eCertCreateResp) {
-                if (err) return cb(err);
-                debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp);
-
-                let enrollment = {
-                    key: signingKeyPair.prvKeyObj.prvKeyHex,
-                    cert: eCertCreateResp.certs.sign.toString("hex"),
-                    chainKey: eCertCreateResp.pkchain.toString("hex")
-                };
-                // debug('cert:\n\n',enrollment.cert)
-                cb(null, enrollment);
-            });
-        });
-        */
+            debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp.toByteString());
+            
+            Enrollment enrollment = new Enrollment();
+            enrollment.setKey(Hex.toHexString(signingKeyPair.getPrivate().getEncoded()));
+            enrollment.setCert(Hex.toHexString(eCertCreateResp.getCerts().getSign().toByteArray()));
+            enrollment.setChainKey(Hex.toHexString(eCertCreateResp.getPkchain().toByteArray()));
+            
+            debug("Enrolled successfully: "+enrollment);
+            return enrollment;
+        
+        } catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+//		} catch (InvalidKeyException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (NoSuchPaddingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IllegalBlockSizeException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (BadPaddingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (SignatureException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (InvalidProtocolBufferException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+        
+        return null;
 
     } // end enroll
 
@@ -349,12 +443,68 @@ class MemberServicesImpl implements MemberServices {
 
     } // end processTCertBatch
     
+    // Convert a list of member type names to the role mask currently used by the peer
+    private int rolesToMask(ArrayList<String> roles) {
+        int mask = 0;
+        if (roles != null) {
+            for (String role: roles) {
+                switch (role) {
+                    case "client":
+                        mask |= 1;
+                        break;       // Client mask
+                    case "peer":
+                        mask |= 2;
+                        break;       // Peer mask
+                    case "validator":
+                        mask |= 4;
+                        break;  // Validator mask
+                    case "auditor":
+                        mask |= 8;
+                        break;    // Auditor mask
+                }
+            }
+        }
+        
+        if (mask == 0) mask = 1;  // Client
+        return mask;
+    }
+    
     private static void info(String msg, Object... params) {
         logger.log(Level.INFO, msg, params);
       }
     private static void debug(String msg, Object... params) {
-        logger.log(Level.FINE, msg, params);
+        //logger.log(Level.FINE, msg, params);
+    	info(msg, params);
       }
+    
+    public static void main(String args[]) throws Exception {
+//    	CryptoPrimitives crypto = new CryptoPrimitives("SHA3", 256);
+//    	crypto.eciesDecrypt(null, "Hello World!".getBytes());
+//    	
+//    	debug("SUCCESS!", null);
+//    	
+//    	if (true)
+//    		return;
+    	Chain testChain = new Chain("chain1");
+
+			testChain.setMemberServicesUrl("grpc://localhost:7054", null);
+			testChain.setKeyValStore(new FileKeyValStore("/home/pardha/test.properties"));
+			testChain.addPeer("grpc://localhost:7051", null);			
+			testChain.enroll("admin", "Xurw3yU9zI0l");
+			
+		
+    			
+//    	MemberServicesImpl msi = new MemberServicesImpl("grpc://localhost:7054", "");
+    	RegistrationRequest req = new RegistrationRequest();
+    	req.setAffiliation("bank_a");
+    	req.setEnrollmentID("myuser");
+    	
+    	Member registrar = testChain.getMember("admin");
+    	testChain.setRegistrar(registrar);
+//    	msi.register(req, registrar);    	
+    	testChain.register(req);
+    	
+    }
 
 
 } // end MemberServicesImpl

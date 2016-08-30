@@ -14,7 +14,7 @@ class Member {
     private String account;
     private String affiliation;
     private String enrollmentSecret;
-    private String enrollment = "";
+    private Enrollment enrollment = null;
     private MemberServices memberServices;
     private KeyValStore keyValStore;
     private String keyValStoreName;
@@ -150,7 +150,7 @@ class Member {
      * Get the enrollment info.
      * @returns {Enrollment} The enrollment.
      */
-    public String getEnrollment() {
+    public Enrollment getEnrollment() {    	
         return this.enrollment;
     };
 
@@ -167,7 +167,7 @@ class Member {
      * @returns {boolean} True if enrolled; otherwise, false.
      */
     public boolean isEnrolled() {
-        return !enrollment.trim().isEmpty();
+        return this.enrollment != null;
     }
 
     /**
@@ -202,7 +202,7 @@ class Member {
      * @param enrollmentSecret The password or enrollment secret as returned by register.
      * @param cb Callback to report an error if it occurs
      */
-    public String enroll(String enrollmentSecret) {
+    public Enrollment enroll(String enrollmentSecret) {
         if (null != enrollment) {
             debug("Previously enrolled, [enrollment=%j]", enrollment);
             return enrollment;
@@ -213,9 +213,10 @@ class Member {
         req.setEnrollmentSecret(enrollmentSecret);
         debug("Enrolling [req=%j]", req);
         
-        memberServices.enroll(req);
+        this.enrollment = memberServices.enroll(req);
+        return this.enrollment;
         
-        return ""; //TODO return correct enrollment info
+        //return null; //TODO return correct enrollment info
         /*TODO implement callback logic
         , function (err:Error, enrollment:Enrollment) {
             debug("[memberServices.enroll] err=%s, enrollment=%j", err, enrollment);

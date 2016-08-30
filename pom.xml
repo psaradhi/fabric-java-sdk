@@ -9,6 +9,7 @@
   <url>http://maven.apache.org</url>
 <properties>
     <grpc.version>0.15.0</grpc.version><!-- CURRENT_GRPC_VERSION -->
+    <bouncycastle.version>1.55</bouncycastle.version>
   </properties>
   <dependencies>
     <dependency>
@@ -32,6 +33,12 @@
       <artifactId>grpc-stub</artifactId>
       <version>${grpc.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+	<dependency>
+	    <groupId>org.bouncycastle</groupId>
+	    <artifactId>bcprov-jdk15on</artifactId>
+	    <version>${bouncycastle.version}</version>
+	</dependency>
   </dependencies>
   <build>
     <extensions>

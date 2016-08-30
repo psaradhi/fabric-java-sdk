@@ -1,5 +1,6 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -13,7 +14,11 @@ public class PeerClientTest {
 	@Before
 	public void init() {
 		testChain = new Chain("chain1");
-		testChain.setMemberServicesUrl("", null);
+		try {
+			testChain.setMemberServicesUrl("grpc://localhost:7054", null);
+		} catch(CertificateException cex) {
+			cex.printStackTrace();// TODO: Handle the exception properly
+		}
 		testChain.setKeyValStore(new FileKeyValStore("/home/pardha/test.properties"));
 		testChain.addPeer("grpc://localhost:7051", null);
 

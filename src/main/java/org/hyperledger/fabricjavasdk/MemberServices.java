@@ -38,8 +38,9 @@ public interface MemberServices {
      * Enroll the member and return an opaque member object
      * @param req Enrollment request with the following fields: name, enrollmentSecret
      * @param cb Callback to report an error if it occurs.
+     * @return 
      */
-    void enroll(EnrollmentRequest req);
+    Enrollment enroll(EnrollmentRequest req);
 
     /**
      * Get an array of transaction certificates (tcerts).

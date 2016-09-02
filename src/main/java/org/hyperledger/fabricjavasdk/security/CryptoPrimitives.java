@@ -106,23 +106,23 @@ public class CryptoPrimitives {
 	}
 	
 	public byte[] eciesDecrypt(KeyPair keyPair, byte[] data) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {		
-//		return decrypt(keyPair, data, "ECIES");
-		IESCipher cipher = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
+		return decrypt(keyPair, data, "ECIES");
+		/*IESCipher cipher = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
 				new KDF2BytesGenerator(new SHA3Digest()), new HMac(new SHA256Digest()),
 	            new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()))));
 
 	    cipher.engineInit(Cipher.DECRYPT_MODE, keyPair.getPrivate(), new SecureRandom());
-	    return cipher.engineDoFinal(data, 0, data.length);
+	    return cipher.engineDoFinal(data, 0, data.length);*/
 		
 	}
 	
-//	private byte[] decrypt(KeyPair keyPair, byte[] data, String encryptionName) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {		
-//		Cipher cipher = Cipher.getInstance(encryptionName, BouncyCastleProvider.PROVIDER_NAME);		
-//		cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
-//		
-//		cipher.update(data);
-//		return cipher.doFinal();
-//	}
+	private byte[] decrypt(KeyPair keyPair, byte[] data, String encryptionName) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {		
+		Cipher cipher = Cipher.getInstance(encryptionName, BouncyCastleProvider.PROVIDER_NAME);		
+		cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+		
+		cipher.update(data);
+		return cipher.doFinal();
+	}
 	
 	public BigInteger[] ecdsaSign(PrivateKey privateKey, byte[] data) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
 //		ECDSASigner signer = new ECDSASigner (new HMacDSAKCalculator (new SHA256Digest ()));

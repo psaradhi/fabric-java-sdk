@@ -264,18 +264,17 @@ class MemberServicesImpl implements MemberServices {
 	        
 	        byte[] cipherText = eCertCreateResp.getTok().getTok().toByteArray();	        
 	        debug("Cipher text = "+StringUtil.toHexString(cipherText));
-//            byte[] decryptedTokBytes = cryptoPrimitives.eciesDecrypt(encryptionKeyPair, cipherText);            
-//            byte[] buf = eCertCreateRequestBuilder.setTok(Token.newBuilder().setTok(ByteString.copyFrom(decryptedTokBytes))).build().toByteArray();
-//            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);            
-//            eCertCreateRequestBuilder.setSig(Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build());
-//            
-////            ECertCreateResp 
-//            eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
+            byte[] decryptedTokBytes = cryptoPrimitives.eciesDecrypt(encryptionKeyPair, cipherText);            
+            byte[] buf = eCertCreateRequestBuilder.setTok(Token.newBuilder().setTok(ByteString.copyFrom(decryptedTokBytes))).build().toByteArray();
+            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);            
+            eCertCreateRequestBuilder.setSig(Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build());
+
+            eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
 
             debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp.toByteString());
             
             Enrollment enrollment = new Enrollment();
-            enrollment.setKey(Hex.toHexString(signingKeyPair.getPrivate().getEncoded()));
+            enrollment.setKey(Hex.toHexString(encryptionKeyPair.getPrivate().getEncoded()));
             enrollment.setCert(Hex.toHexString(eCertCreateResp.getCerts().getSign().toByteArray()));
             enrollment.setChainKey(Hex.toHexString(eCertCreateResp.getPkchain().toByteArray()));
             

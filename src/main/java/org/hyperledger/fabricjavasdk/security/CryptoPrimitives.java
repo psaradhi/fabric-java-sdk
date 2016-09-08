@@ -26,12 +26,12 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -40,7 +40,6 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -146,25 +145,18 @@ public class CryptoPrimitives {
 		      System.out.println("kM - macKey=" + toPrintByteArray(macKey));
 		      
 		      
-		   // Verifying Message Authentication Code (aka mac/tag)
-		      Mac macGenerator = Mac.getInstance(MAC_ALGORITHM, SECURITY_PROVIDER);		      
-		      macGenerator.init(new SecretKeySpec(macKey, MAC_ALGORITHM));
-		      		      
-		      byte[] expectedTag = macGenerator.doFinal(encryptedMessage);
+		   // Verifying Message Authentication Code (aka mac/tag)		      
+		      byte[] expectedTag = calculateMac(macKey, encryptedMessage);
 		      if (!Arrays.areEqual(tag, expectedTag)) {
 		        throw new RuntimeException("Bad Message Authentication Code!");
 		      }
 		      
+		      //TODO: ALL Good upto this point - now focus on decryption
 		   // Decrypting the message.
-		      Cipher cipher = Cipher.getInstance(SYMMETRIC_ALGORITHM);
-		      cipher.init(
-		          Cipher.DECRYPT_MODE,
-		          new SecretKeySpec(encryptionKey, SYMMETRIC_KEY_TYPE),
-		          new IvParameterSpec(SYMMETRIC_IV));
-		      byte[] output = cipher.doFinal(encryptedMessage);
+		      byte[] output = aesDecrypt(encryptionKey, encryptedMessage);
+		      
 		      System.out.println("Original data:"+toPrintByteArray(output));
-//		      return output;
-		      throw new RuntimeException("Intentionally thrown");
+		      return output;
 		      
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -174,6 +166,29 @@ public class CryptoPrimitives {
 
 		
 //		return decrypt(keyPair, data, "ECIES");		
+	}
+	
+	private byte[] calculateMac(byte[] macKey, byte[] encryptedMessage) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException {
+		HMac hmac = new HMac(new SHA3Digest());
+		hmac.init(new KeyParameter(macKey));
+		hmac.update(encryptedMessage, 0, encryptedMessage.length);		
+		byte[] out = new byte[MAC_KEY_BYTE_COUNT];
+		hmac.doFinal(out, 0);
+		return out;
+	}
+	
+	private byte[] aesDecrypt(byte[] encryptionKey, byte[] encryptedMessage) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		boolean error = true;
+		if (error) {
+			throw new RuntimeException("Intentionally thrown");
+		}
+		Cipher cipher = Cipher.getInstance(SYMMETRIC_ALGORITHM);
+	      cipher.init(
+	          Cipher.DECRYPT_MODE,
+	          new SecretKeySpec(encryptionKey, SYMMETRIC_KEY_TYPE),
+	          new IvParameterSpec(SYMMETRIC_IV));
+	      return cipher.doFinal(encryptedMessage);
+		
 	}
 	
 	private String toPrintByteArray(byte[] data) {

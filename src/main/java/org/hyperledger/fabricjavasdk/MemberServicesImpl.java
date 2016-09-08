@@ -1,9 +1,6 @@
 package org.hyperledger.fabricjavasdk;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.security.CryptoPrimitive;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -13,40 +10,32 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKeyFactory;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 
 import io.netty.util.internal.StringUtil;
-import protos.*;
 import protos.Ca.CryptoType;
 import protos.Ca.ECertCreateReq;
-import protos.Ca.ECertCreateReqOrBuilder;
 import protos.Ca.ECertCreateResp;
 import protos.Ca.Identity;
 import protos.Ca.PublicKey;
 import protos.Ca.RegisterUserReq;
-import protos.Ca.RegisterUserReqOrBuilder;
 import protos.Ca.Registrar;
 import protos.Ca.Signature;
 import protos.Ca.Token;
+import protos.ECAAGrpc;
 import protos.ECAAGrpc.ECAABlockingStub;
+import protos.ECAPGrpc;
 import protos.ECAPGrpc.ECAPBlockingStub;
+import protos.TCAPGrpc;
 import protos.TCAPGrpc.TCAPBlockingStub;
+import protos.TLSCAPGrpc;
 import protos.TLSCAPGrpc.TLSCAPBlockingStub;
 
 /**

@@ -10,52 +10,39 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.ec.ECDecryptor;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.engines.IESEngine;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.DSAKCalculator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import io.netty.util.internal.StringUtil;
 
@@ -65,6 +52,21 @@ public class CryptoPrimitives {
 	private int securityLevel;	
 	private String curveName;
 //	private String suite;
+	
+	
+	  private static final String SECURITY_PROVIDER = "BC";
+	  private static final String ASYMMETRIC_KEY_TYPE = "EC";
+	  private static final String KEY_AGREEMENT_ALGORITHM = "ECDH";
+	  /** OpenSSL name of the NIST P-126 Elliptic Curve */
+	  private static final String EC_CURVE = "secp256r1";	  
+	  private static final String SYMMETRIC_KEY_TYPE = "AES";
+	  private static final int SYMMETRIC_KEY_BYTE_COUNT = 32;
+	  private static final String MAC_ALGORITHM = "HmacSHA256";
+	  private static final String SYMMETRIC_ALGORITHM = "AES/CFB/NoPadding";
+	  private static final byte[] SYMMETRIC_IV = Hex.decode("00000000000000000000000000000000");
+	  private static final int MAC_KEY_BYTE_COUNT = 32;
+	  private static final byte[] HKDF_INFO = null;
+	  private static final byte[] HKDF_SALT = null /* equivalent to a zeroed salt of hashLen */;
 	
 	public CryptoPrimitives(String algorithm, int securityLevel) {		
 		this.algorithm = algorithm;
@@ -106,15 +108,97 @@ public class CryptoPrimitives {
 	}
 	
 	public byte[] eciesDecrypt(KeyPair keyPair, byte[] data) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {		
-		return decrypt(keyPair, data, "ECIES");
-		/*IESCipher cipher = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
-				new KDF2BytesGenerator(new SHA3Digest()), new HMac(new SHA256Digest()),
-	            new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()))));
-
-	    cipher.engineInit(Cipher.DECRYPT_MODE, keyPair.getPrivate(), new SecureRandom());
-	    return cipher.engineDoFinal(data, 0, data.length);*/
 		
+		// split the key into various parts
+		byte[] ephemeralPublicKeyBytes = Arrays.copyOfRange(data, 0, 65); 
+		byte[] encryptedMessage = Arrays.copyOfRange(data, 65, 93);
+	    byte[] tag = Arrays.copyOfRange(data, 93, 125);
+	    
+	 // Parsing public key.
+	      ECParameterSpec asymmetricKeyParams = generateECParameterSpec();
+	      KeyFactory asymmetricKeyFactory =
+	          KeyFactory.getInstance(ASYMMETRIC_KEY_TYPE, SECURITY_PROVIDER);
+	      try {
+			PublicKey ephemeralPublicKey = asymmetricKeyFactory.generatePublic(
+			    new ECPublicKeySpec(	        		
+			    		asymmetricKeyParams.getCurve().decodePoint(ephemeralPublicKeyBytes),
+			          asymmetricKeyParams));
+			
+			// Deriving shared secret.
+		      KeyAgreement keyAgreement =
+		          KeyAgreement.getInstance(KEY_AGREEMENT_ALGORITHM, SECURITY_PROVIDER);
+		      keyAgreement.init(keyPair.getPrivate());
+		      keyAgreement.doPhase(ephemeralPublicKey, true);
+		      byte[] sharedSecret = keyAgreement.generateSecret();
+		      
+		      System.out.println("Z - sharedSecret=" + toPrintByteArray(sharedSecret));
+		      
+		   // Deriving encryption and mac keys.
+		      HKDFBytesGenerator hkdfBytesGenerator = new HKDFBytesGenerator(new SHA3Digest());
+		      
+		      hkdfBytesGenerator.init(new HKDFParameters(sharedSecret, HKDF_SALT, HKDF_INFO));
+		      byte[] encryptionKey = new byte[SYMMETRIC_KEY_BYTE_COUNT];
+		      hkdfBytesGenerator.generateBytes(encryptionKey, 0, SYMMETRIC_KEY_BYTE_COUNT);
+		      System.out.println("kE - encryptionKey=" + toPrintByteArray(encryptionKey));
+		      		      
+		      byte[] macKey = new byte[MAC_KEY_BYTE_COUNT];		      
+		      hkdfBytesGenerator.generateBytes(macKey, 0, MAC_KEY_BYTE_COUNT);
+		      System.out.println("kM - macKey=" + toPrintByteArray(macKey));
+		      
+		      
+		   // Verifying Message Authentication Code (aka mac/tag)
+		      Mac macGenerator = Mac.getInstance(MAC_ALGORITHM, SECURITY_PROVIDER);		      
+		      macGenerator.init(new SecretKeySpec(macKey, MAC_ALGORITHM));
+		      		      
+		      byte[] expectedTag = macGenerator.doFinal(encryptedMessage);
+		      if (!Arrays.areEqual(tag, expectedTag)) {
+		        throw new RuntimeException("Bad Message Authentication Code!");
+		      }
+		      
+		   // Decrypting the message.
+		      Cipher cipher = Cipher.getInstance(SYMMETRIC_ALGORITHM);
+		      cipher.init(
+		          Cipher.DECRYPT_MODE,
+		          new SecretKeySpec(encryptionKey, SYMMETRIC_KEY_TYPE),
+		          new IvParameterSpec(SYMMETRIC_IV));
+		      byte[] output = cipher.doFinal(encryptedMessage);
+		      System.out.println("Original data:"+toPrintByteArray(output));
+//		      return output;
+		      throw new RuntimeException("Intentionally thrown");
+		      
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException("Could not decrypt the message", e);
+		}
+
+		
+//		return decrypt(keyPair, data, "ECIES");		
 	}
+	
+	private String toPrintByteArray(byte[] data) {
+		String s = "[";
+	      for (int i=0; i< data.length; i++) {
+	    	  if (data[i] < 0) {		    		  
+	    		  s += data[i] & 0xFF;
+	    	  } else {
+	    		  s += data[i] & 0xFF;
+	    	  }
+	    	  
+	    	  s += " ";
+	      }
+	      s += "]";
+	      return s;
+	}
+	
+	private ECNamedCurveParameterSpec generateECParameterSpec() {
+	    ECNamedCurveParameterSpec bcParams = ECNamedCurveTable.getParameterSpec(this.curveName);
+//	    ECNamedCurveSpec params = new ECNamedCurveSpec(bcParams.getName(), bcParams.getCurve(),
+//	        bcParams.getG(), bcParams.getN(), bcParams.getH(), bcParams.getSeed());
+//	    return params;
+	    return bcParams;
+	  }
+
 	
 	private byte[] decrypt(KeyPair keyPair, byte[] data, String encryptionName) throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {		
 		Cipher cipher = Cipher.getInstance(encryptionName, BouncyCastleProvider.PROVIDER_NAME);		

@@ -13,6 +13,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -281,36 +282,9 @@ class MemberServicesImpl implements MemberServices {
             debug("Enrolled successfully: "+enrollment);
             return enrollment;
         
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchProviderException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-//		} catch (InvalidKeyException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (NoSuchPaddingException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IllegalBlockSizeException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (BadPaddingException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (SignatureException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (InvalidProtocolBufferException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
+			e.printStackTrace();		
 		}
         
         return null;
@@ -477,10 +451,10 @@ class MemberServicesImpl implements MemberServices {
       }
     
     public static void main(String args[]) throws Exception {
-//    	CryptoPrimitives crypto = new CryptoPrimitives("SHA3", 256);
-//    	crypto.eciesDecrypt(null, "Hello World!".getBytes());
+
+//    	String hex = "430369767a2fa435dace082e72063f085c9b3cfd34c2557c33e1e69b02d91b42ee21ad7aad7f9834550c2c127b6ffae0b373ec4f54757d6694d735154d33ff9fe68a2501e6967130638b6e14c855d6df5411e7de7372da90da7f34086d08310881404b12ff10af89b710f9978a5f9f4ecf0b9273b1342d74dd3a9712a";
 //    	
-//    	debug("SUCCESS!", null);
+//    	System.out.println(Arrays.toString(Hex.decode(hex)));
 //    	
 //    	if (true)
 //    		return;
@@ -491,7 +465,7 @@ class MemberServicesImpl implements MemberServices {
 			testChain.addPeer("grpc://localhost:7051", null);			
 			testChain.enroll("admin", "Xurw3yU9zI0l");
 			
-		
+		/*
     			
 //    	MemberServicesImpl msi = new MemberServicesImpl("grpc://localhost:7054", "");
     	RegistrationRequest req = new RegistrationRequest();
@@ -502,7 +476,7 @@ class MemberServicesImpl implements MemberServices {
     	testChain.setRegistrar(registrar);
 //    	msi.register(req, registrar);    	
     	testChain.register(req);
-    	
+    	*/
     }
 
 

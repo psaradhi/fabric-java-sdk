@@ -252,13 +252,19 @@ class MemberServicesImpl implements MemberServices {
 	        
 	        ECertCreateResp eCertCreateResp = this.ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
 	        
-	        byte[] cipherText = eCertCreateResp.getTok().getTok().toByteArray();	        
-	        debug("Cipher text = "+StringUtil.toHexString(cipherText));
-            byte[] decryptedTokBytes = cryptoPrimitives.eciesDecrypt(encryptionKeyPair, cipherText);            
-            byte[] buf = eCertCreateRequestBuilder.setTok(Token.newBuilder().setTok(ByteString.copyFrom(decryptedTokBytes))).build().toByteArray();
-            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);            
-            eCertCreateRequestBuilder.setSig(Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build());
-
+	        byte[] cipherText = eCertCreateResp.getTok().getTok().toByteArray();
+            byte[] decryptedTokBytes = cryptoPrimitives.eciesDecrypt(encryptionKeyPair, cipherText);
+            
+            eCertCreateRequestBuilder = eCertCreateRequestBuilder
+            		.setTok(Token.newBuilder().setTok(ByteString.copyFrom(decryptedTokBytes)));
+            
+            ECertCreateReq certReq = eCertCreateRequestBuilder.buildPartial();            		
+            byte[] buf = certReq.toByteArray();
+            
+            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);
+            Signature protoSig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build();
+            eCertCreateRequestBuilder = eCertCreateRequestBuilder.setSig(protoSig);
+            
             eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
 
             debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp.toByteString());
@@ -454,7 +460,7 @@ class MemberServicesImpl implements MemberServices {
 			testChain.addPeer("grpc://localhost:7051", null);			
 			testChain.enroll("admin", "Xurw3yU9zI0l");
 			
-		/*
+		
     			
 //    	MemberServicesImpl msi = new MemberServicesImpl("grpc://localhost:7054", "");
     	RegistrationRequest req = new RegistrationRequest();
@@ -465,7 +471,7 @@ class MemberServicesImpl implements MemberServices {
     	testChain.setRegistrar(registrar);
 //    	msi.register(req, registrar);    	
     	testChain.register(req);
-    	*/
+    	
     }
 
 

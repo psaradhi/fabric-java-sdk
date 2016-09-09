@@ -6,13 +6,16 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
@@ -20,18 +23,25 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
-import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -40,7 +50,6 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import io.netty.util.internal.StringUtil;
 
@@ -58,7 +67,6 @@ public class CryptoPrimitives {
 	private static final String EC_CURVE = "secp256r1";
 	private static final String SYMMETRIC_KEY_TYPE = "AES";
 	private static final int SYMMETRIC_KEY_BYTE_COUNT = 32;
-	private static final String MAC_ALGORITHM = "HmacSHA256";
 	private static final String SYMMETRIC_ALGORITHM = "AES/CFB/NoPadding";
 	private static final int MAC_KEY_BYTE_COUNT = 32;
 	private static final byte[] HKDF_INFO = null;
@@ -95,11 +103,7 @@ public class CryptoPrimitives {
 		return generateKey("ECDSA", this.curveName);
 	}
 
-	public KeyPair eciesKeyGen()
-			throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
-		return generateKey("ECEIS", this.curveName);
-	}
-
+	
 	private KeyPair generateKey(String encryptionName, String curveName)
 			throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
 		ECGenParameterSpec ecGenSpec = new ECGenParameterSpec(curveName);
@@ -207,13 +211,29 @@ public class CryptoPrimitives {
 		return bcParams;
 	}
 
+	
 	public BigInteger[] ecdsaSign(PrivateKey privateKey, byte[] data)
-			throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
-		// ECDSASigner signer = new ECDSASigner (new HMacDSAKCalculator (new
-		// SHA256Digest ()));
-		ECDSASigner signer = new ECDSASigner();
-		signer.init(true, ECUtil.generatePrivateKeyParameter(privateKey));
-		return signer.generateSignature(data);
+			throws InvalidKeyException, NoSuchAlgorithmException, SignatureException, NoSuchProviderException {
+		
+		byte[] encoded = hash(data, new SHA3Digest());
+		X9ECParameters params = SECNamedCurves.getByName(this.curveName);
+		ECDomainParameters ecParams = new ECDomainParameters(params.getCurve(),
+				params.getG(), params.getN(), params.getH());
+		
+		ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA512Digest()));
+		ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(
+				((ECPrivateKey) privateKey).getS(), ecParams);
+		signer.init(true, privKey);
+		BigInteger[] sigs = signer.generateSignature(encoded);
+		return sigs;
+
+	}
+	
+	private byte[] hash(byte[] input, Digest digest) {        
+        byte[] retValue = new byte[digest.getDigestSize()];
+        digest.update(input, 0, input.length);
+        digest.doFinal(retValue, 0);
+        return retValue;
 	}
 
 	public PrivateKey ecdsaKeyFromPrivate(byte[] key)

@@ -270,7 +270,7 @@ class MemberServicesImpl implements MemberServices {
             debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp.toByteString());
             
             Enrollment enrollment = new Enrollment();
-            enrollment.setKey(Hex.toHexString(encryptionKeyPair.getPrivate().getEncoded()));
+            enrollment.setKey(Hex.toHexString(signingKeyPair.getPrivate().getEncoded()));
             enrollment.setCert(Hex.toHexString(eCertCreateResp.getCerts().getSign().toByteArray()));
             enrollment.setChainKey(Hex.toHexString(eCertCreateResp.getPkchain().toByteArray()));
             

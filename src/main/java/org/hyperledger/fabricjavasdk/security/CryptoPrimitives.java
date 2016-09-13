@@ -17,7 +17,9 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -214,7 +216,7 @@ public class CryptoPrimitives {
 	
 	public BigInteger[] ecdsaSign(PrivateKey privateKey, byte[] data)
 			throws InvalidKeyException, NoSuchAlgorithmException, SignatureException, NoSuchProviderException {
-		
+		System.out.println("DATA:"+toPrintByteArray(data));
 		byte[] encoded = hash(data, new SHA3Digest());
 		X9ECParameters params = SECNamedCurves.getByName(this.curveName);
 		ECDomainParameters ecParams = new ECDomainParameters(params.getCurve(),
@@ -239,8 +241,14 @@ public class CryptoPrimitives {
 	public PrivateKey ecdsaKeyFromPrivate(byte[] key)
 			throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
 
-		return KeyFactory.getInstance("ECDSA").generatePrivate(
-				new ECPrivateKeySpec(new BigInteger(key), ECNamedCurveTable.getParameterSpec(this.curveName)));
+		EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(key);
+        KeyFactory generator = KeyFactory.getInstance("ECDSA", SECURITY_PROVIDER);
+        PrivateKey privateKey = generator.generatePrivate(privateKeySpec);
+        
+        return privateKey;
+        
+		/*return KeyFactory.getInstance("ECDSA").generatePrivate(
+				new ECPrivateKeySpec(new BigInteger(1,key), ECNamedCurveTable.getParameterSpec(this.curveName)));*/
 	}
 
 	private void init() {

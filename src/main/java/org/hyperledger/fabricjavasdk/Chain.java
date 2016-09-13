@@ -8,6 +8,9 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+
 /**
  * The class representing a chain with which the client SDK interacts.
  */
@@ -257,8 +260,9 @@ public class Chain {
      * Register a user or other member type with the chain.
      * @param registrationRequest Registration information.
      * @param cb Callback with registration results
+     * @throws RegistrationException 
      */
-    public void register(RegistrationRequest registrationRequest) {
+    public void register(RegistrationRequest registrationRequest) throws RegistrationException {
         Member member = getMember(registrationRequest.enrollmentID);
 	    member.register(registrationRequest);
     }
@@ -269,8 +273,9 @@ public class Chain {
      * @param name The name of the user or other member to enroll.
      * @param secret The secret of the user or other member to enroll.
      * @param cb The callback to return the user or other member.
+     * @throws EnrollmentException 
      */
-    void enroll(String name, String secret) {    	
+    void enroll(String name, String secret) throws EnrollmentException {    	
         Member member = getMember(name);        
         member.enroll(secret); // TODO add logic present in callback
         members.put(name, member);
@@ -280,9 +285,10 @@ public class Chain {
      * Register and enroll a user or other member type.
      * This assumes that a registrar with sufficient privileges has been set.
      * @param registrationRequest Registration information.
+     * @throws RegistrationException 
      * @params
      */
-    Member registerAndEnroll(RegistrationRequest registrationRequest) {
+    Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException {
         Member member = getMember(registrationRequest.enrollmentID);
         if (member.isEnrolled()) {
                debug("already enrolled");

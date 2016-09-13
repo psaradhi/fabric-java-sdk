@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+
 class Member {
 	private static final Logger logger = Logger.getLogger(Member.class.getName());
 
@@ -173,8 +176,9 @@ class Member {
     /**
      * Register the member.
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
+     * @throws RegistrationException 
      */
-    public void register(RegistrationRequest registrationRequest) {
+    public void register(RegistrationRequest registrationRequest) throws RegistrationException {
         if (!registrationRequest.enrollmentID.equals(getName())) {
             throw new RuntimeException("registration enrollment ID and member name are not equal");
         }
@@ -201,8 +205,9 @@ class Member {
      * Enroll the member and return the enrollment results.
      * @param enrollmentSecret The password or enrollment secret as returned by register.
      * @param cb Callback to report an error if it occurs
+     * @throws EnrollmentException 
      */
-    public Enrollment enroll(String enrollmentSecret) {
+    public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {
         if (null != enrollment) {
             debug("Previously enrolled, [enrollment=%j]", enrollment);
             return enrollment;
@@ -215,37 +220,14 @@ class Member {
         
         this.enrollment = memberServices.enroll(req);
         return this.enrollment;
-        
-        //return null; //TODO return correct enrollment info
-        /*TODO implement callback logic
-        , function (err:Error, enrollment:Enrollment) {
-            debug("[memberServices.enroll] err=%s, enrollment=%j", err, enrollment);
-            if (err) return cb(err);
-            self.enrollment = enrollment;
-            // Generate queryStateKey
-            self.enrollment.queryStateKey = self.chain.cryptoPrimitives.generateNonce();
-
-            // Save state
-            self.saveState(function (err) {
-                if (err) return cb(err);
-
-                // Unmarshall chain key
-                // TODO: during restore, unmarshall enrollment.chainKey
-                debug("[memberServices.enroll] Unmarshalling chainKey");
-                var ecdsaChainKey = self.chain.cryptoPrimitives.ecdsaPEMToPublicKey(self.enrollment.chainKey);
-                self.enrollment.enrollChainKey = ecdsaChainKey;
-
-                cb(null, enrollment);
-            });
-        });
-        */
     }
 
     /**
      * Perform both registration and enrollment.
      * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
+     * @throws RegistrationException 
      */
-    public void registerAndEnroll(RegistrationRequest registrationRequest) {
+    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException {
         if (null != enrollment) {
             debug("previously enrolled, enrollment=%j", enrollment);
             return ;

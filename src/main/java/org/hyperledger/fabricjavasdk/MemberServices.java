@@ -1,5 +1,8 @@
 package org.hyperledger.fabricjavasdk;
 
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+
 public interface MemberServices {
 
     /**
@@ -32,7 +35,7 @@ public interface MemberServices {
      * @param registrar The identity of the registar (i.e. who is performing the registration)
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
-    void register(RegistrationRequest req, Member registrar);
+    void register(RegistrationRequest req, Member registrar) throws RegistrationException;
 
     /**
      * Enroll the member and return an opaque member object
@@ -40,7 +43,7 @@ public interface MemberServices {
      * @param cb Callback to report an error if it occurs.
      * @return 
      */
-    Enrollment enroll(EnrollmentRequest req);
+    Enrollment enroll(EnrollmentRequest req) throws EnrollmentException;
 
     /**
      * Get an array of transaction certificates (tcerts).

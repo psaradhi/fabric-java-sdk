@@ -14,6 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
 
 import com.google.protobuf.ByteString;
@@ -117,7 +119,7 @@ class MemberServicesImpl implements MemberServices {
      * @param registrar The identity of the registrar (i.e. who is performing the registration)
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
-    public void register(RegistrationRequest req, Member registrar) {
+    public void register(RegistrationRequest req, Member registrar) throws RegistrationException {
     	if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) {
     		throw new IllegalArgumentException("EntrollmentID cannot be null or empty");
     	}
@@ -159,21 +161,8 @@ class MemberServicesImpl implements MemberServices {
 	    	debug("User registered with token:"+token.getTok());
 	    	
 	    	
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchProviderException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new RegistrationException("Error while registering the user", e);
 		}
     	
     }       
@@ -224,7 +213,7 @@ class MemberServicesImpl implements MemberServices {
      * @param req Enrollment request with the following fields: name, enrollmentSecret
      * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
      */
-    public Enrollment enroll(EnrollmentRequest req) {
+    public Enrollment enroll(EnrollmentRequest req) throws EnrollmentException {
     	
     	
         debug("[MemberServicesImpl.enroll] [%j]", req);
@@ -278,11 +267,9 @@ class MemberServicesImpl implements MemberServices {
             return enrollment;
         
         } catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();		
+			throw new EnrollmentException("Failed to enroll user", e);
 		}
         
-        return null;
 
     } // end enroll
 

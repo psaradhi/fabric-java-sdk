@@ -188,7 +188,7 @@ class Member {
             return;
         }
 
-        memberServices.register(registrationRequest, chain.getRegistrar());
+        this.enrollmentSecret = memberServices.register(registrationRequest, chain.getRegistrar());
 
         /* TODO implement logic present in callback function
         debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
@@ -355,8 +355,22 @@ class Member {
         this.enrollmentSecret = state.enrollmentSecret;
         this.enrollment = state.enrollment;
     }
+    
+    
 
-    /**
+    public String getEnrollmentSecret() {
+		return enrollmentSecret;
+	}
+
+	public void setEnrollmentSecret(String enrollmentSecret) {
+		this.enrollmentSecret = enrollmentSecret;
+	}
+
+	public void setEnrollment(Enrollment enrollment) {
+		this.enrollment = enrollment;
+	}
+
+	/**
      * Save the current state of this member as a string
      * @return {string} The state of this member as a string
      */

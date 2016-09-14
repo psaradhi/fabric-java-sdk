@@ -262,9 +262,10 @@ public class Chain {
      * @param cb Callback with registration results
      * @throws RegistrationException 
      */
-    public void register(RegistrationRequest registrationRequest) throws RegistrationException {
+    public Member register(RegistrationRequest registrationRequest) throws RegistrationException {
         Member member = getMember(registrationRequest.enrollmentID);
 	    member.register(registrationRequest);
+	    return member;
     }
 
     /**
@@ -275,10 +276,12 @@ public class Chain {
      * @param cb The callback to return the user or other member.
      * @throws EnrollmentException 
      */
-    void enroll(String name, String secret) throws EnrollmentException {    	
+    Member enroll(String name, String secret) throws EnrollmentException {    	
         Member member = getMember(name);        
         member.enroll(secret); // TODO add logic present in callback
         members.put(name, member);
+        
+        return member;
     }
 
     /**

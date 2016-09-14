@@ -64,11 +64,6 @@ class MemberServicesImpl implements MemberServices {
     public MemberServicesImpl(String url, String pem) throws CertificateException {
     	Endpoint ep = new Endpoint(url, pem);
     	
-    	//TODO: How to pass options to stubs?
-//    	var options = {
-//                "grpc.ssl_target_name_override" : "tlsca",
-//                ""grpc.default_authority": ""tlsca"
-//          };
     	this.ecaaClient = ECAAGrpc.newBlockingStub(ep.getChannelBuilder().build());
     	this.ecapClient = ECAPGrpc.newBlockingStub(ep.getChannelBuilder().build());
     	this.tcapClient = TCAPGrpc.newBlockingStub(ep.getChannelBuilder().build());
@@ -119,7 +114,7 @@ class MemberServicesImpl implements MemberServices {
      * @param registrar The identity of the registrar (i.e. who is performing the registration)
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
-    public void register(RegistrationRequest req, Member registrar) throws RegistrationException {
+    public String register(RegistrationRequest req, Member registrar) throws RegistrationException {
     	if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) {
     		throw new IllegalArgumentException("EntrollmentID cannot be null or empty");
     	}
@@ -157,9 +152,7 @@ class MemberServicesImpl implements MemberServices {
 			regReqBuilder.setSig(sig);
 	    	debug("Now sendingt register request");
 			Token token = this.ecaaClient.registerUser(regReqBuilder.build());
-			
-	    	debug("User registered with token:"+token.getTok());
-	    	
+			return token.getTok().toStringUtf8();	    	
 	    	
 		} catch (Exception e) {
 			throw new RegistrationException("Error while registering the user", e);
@@ -445,7 +438,7 @@ class MemberServicesImpl implements MemberServices {
 			testChain.setMemberServicesUrl("grpc://localhost:7054", null);
 			testChain.setKeyValStore(new FileKeyValStore("/home/pardha/test.properties"));
 			testChain.addPeer("grpc://localhost:7051", null);			
-			testChain.enroll("admin", "Xurw3yU9zI0l");
+			Member registrar = testChain.enroll("admin", "Xurw3yU9zI0l");
 			
 		
     			
@@ -454,11 +447,29 @@ class MemberServicesImpl implements MemberServices {
     	req.setAffiliation("bank_a");
     	req.setEnrollmentID("myuser");
     	
-    	Member registrar = testChain.getMember("admin");
+//    	Member registrar = testChain.getMember("admin");
     	testChain.setRegistrar(registrar);
 //    	msi.register(req, registrar);    	
-    	testChain.register(req);
+    	Member newUser = testChain.register(req);
+    	if (newUser.isRegistered()) {
+    		System.out.println("User is registered, token = " + newUser.getEnrollmentSecret());
+    	} else {
+    		System.out.println("User is not registered");
+    	}
     	
+    	if (newUser.isEnrolled()) {
+    		System.out.println("User is enrolled");
+    	} else {
+    		System.out.println("User is not enrolled");
+    	}
+    	
+    	newUser.enroll(newUser.getEnrollmentSecret());
+    	
+    	if (newUser.isEnrolled()) {
+    		System.out.println("User is enrolled now");
+    	} else {
+    		System.out.println("User is still not enrolled");
+    	}
     }
 
 

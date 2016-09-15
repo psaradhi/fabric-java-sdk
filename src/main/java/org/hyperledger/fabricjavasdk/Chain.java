@@ -289,9 +289,10 @@ public class Chain {
      * This assumes that a registrar with sufficient privileges has been set.
      * @param registrationRequest Registration information.
      * @throws RegistrationException 
+     * @throws EnrollmentException 
      * @params
      */
-    Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException {
+    Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         Member member = getMember(registrationRequest.enrollmentID);
         if (member.isEnrolled()) {
                debug("already enrolled");

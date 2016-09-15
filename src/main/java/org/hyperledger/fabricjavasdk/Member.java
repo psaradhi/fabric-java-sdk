@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 
+import io.netty.util.internal.StringUtil;
+
 class Member {
 	private static final Logger logger = Logger.getLogger(Member.class.getName());
 
@@ -162,7 +164,7 @@ class Member {
      * @returns {boolean} True if registered; otherwise, false.
      */
     public boolean isRegistered() {
-        return !enrollmentSecret.trim().isEmpty();
+        return this.isEnrolled() || !StringUtil.isNullOrEmpty(enrollmentSecret);
     }
 
     /**
@@ -224,16 +226,17 @@ class Member {
 
     /**
      * Perform both registration and enrollment.
-     * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
      * @throws RegistrationException 
+     * @throws EnrollmentException 
      */
-    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException {
+    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         if (null != enrollment) {
             debug("previously enrolled, enrollment=%j", enrollment);
             return ;
         }
 
         register(registrationRequest);
+        enroll(this.enrollmentSecret);
         
         /* TODO implement the callback logic
            function (err, enrollmentSecret) {

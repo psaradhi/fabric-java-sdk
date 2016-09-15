@@ -52,6 +52,17 @@ public class PeerClientTest {
 		
 	}
 	
+	@Test
+	public void testInvoke() throws RegistrationException, EnrollmentException {
+
+		InvokeRequest request = new InvokeRequest();
+		request.setArgs(new ArrayList<>(Arrays.asList("invoke", "a", "b", "200")));
+		
+		Member member = getMember("User1", "bank_a");
+		member.invoke(request);
+		
+	}
+
 	private Member getMember(String enrollmentId, String affiliation) throws RegistrationException, EnrollmentException {
 		Member member = testChain.getMember(enrollmentId);
 		if (!member.isRegistered()) {
@@ -65,17 +76,4 @@ public class PeerClientTest {
 		}
 		return member;
 	}
-
-	/*@Test
-	public void testInvoke() throws RegistrationException, EnrollmentException {
-
-		InvokeRequest request = new InvokeRequest();
-		request.setArgs(new ArrayList<>(Arrays.asList("invoke", "a", "b", "200")));
-		
-		Member member = getMember("User1", "bank_a");
-		member.invoke(request);
-		
-	}*/
-
-	
 }

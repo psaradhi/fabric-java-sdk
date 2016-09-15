@@ -18,7 +18,6 @@ public class FileKeyValStore implements KeyValStore {
 
     public FileKeyValStore(String file) {
     	this.file = file;
-    	System.out.println("Key value store = "+file);
     }
 
     /**
@@ -34,7 +33,8 @@ public class FileKeyValStore implements KeyValStore {
     private Properties loadProperties() {
     	Properties properties = new Properties();
     	try ( InputStream input = new FileInputStream(file);) {	    	
-	    	properties.load(input);	    	
+	    	properties.load(input);	 
+	    	input.close();
     	} catch(FileNotFoundException e) {
 //    		e.printStackTrace(); //TODO log this error    		
     	} catch(IOException e) {
@@ -50,11 +50,10 @@ public class FileKeyValStore implements KeyValStore {
      * @param cb function(err)
      */
     public void setValue(String name, String value) {
-    	System.out.println("Now saving properties");
+    	Properties properties = loadProperties();
     	try (
     	    	OutputStream output = new FileOutputStream(file);
         	) {
-    	    	Properties properties = loadProperties();
     	    	properties.setProperty(name, value);
     	    	properties.store(output, "");
     	    	output.close();

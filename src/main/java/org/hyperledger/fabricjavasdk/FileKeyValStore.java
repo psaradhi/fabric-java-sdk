@@ -25,18 +25,23 @@ public class FileKeyValStore implements KeyValStore {
      * @param name
      * @param cb function(err,value)
      */
-    public String getValue(String name) {
-    	try ( InputStream input = new FileInputStream(file);) {
-	    	Properties properties = new Properties();
-	    	properties.load(input);
-	    	return (String) properties.getProperty(name);
+    public String getValue(String name) {    	
+	    	Properties properties = loadProperties();
+	    	return (String) properties.getProperty(name);    	
+    }
+    
+    private Properties loadProperties() {
+    	Properties properties = new Properties();
+    	try ( InputStream input = new FileInputStream(file);) {	    	
+	    	properties.load(input);	 
+	    	input.close();
     	} catch(FileNotFoundException e) {
-//    		e.printStackTrace(); //TODO log this error
-    		return null;
+//    		e.printStackTrace(); //TODO log this error    		
     	} catch(IOException e) {
-//    		e.printStackTrace(); //TODO log this error
-    		return null;
+//    		e.printStackTrace(); //TODO log this error    		
     	}
+    	
+    	return properties;
     }
 
     /**
@@ -45,16 +50,16 @@ public class FileKeyValStore implements KeyValStore {
      * @param cb function(err)
      */
     public void setValue(String name, String value) {
+    	Properties properties = loadProperties();
     	try (
     	    	OutputStream output = new FileOutputStream(file);
         	) {
-    	    	Properties properties = new Properties();
     	    	properties.setProperty(name, value);
-    	    	properties.store(output, null);
+    	    	properties.store(output, "");
+    	    	output.close();
     	    	
         	} catch(IOException e) {
-//        		e.printStackTrace(); //TODO log this error
-        		return;
+        		e.printStackTrace(); //TODO log this error
         	}
     }
 

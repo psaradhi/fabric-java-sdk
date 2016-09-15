@@ -1,24 +1,38 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class Member {
+import org.bouncycastle.util.encoders.Hex;
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+
+import io.netty.util.internal.StringUtil;
+
+class Member implements Serializable {	
+	private static final long serialVersionUID = 8077132186383604355L;
+
 	private static final Logger logger = Logger.getLogger(Member.class.getName());
 
-    private Chain chain;
+    private transient Chain chain;
     private String name;
     private ArrayList<String> roles;
     private String account;
     private String affiliation;
     private String enrollmentSecret;
-    private String enrollment = "";
-    private MemberServices memberServices;
-    private KeyValStore keyValStore;
+    private Enrollment enrollment = null;
+    private transient MemberServices memberServices;
+    private transient KeyValStore keyValStore;
     private String keyValStoreName;
-    private Map<String, TCertGetter> tcertGetterMap;
+//    private Map<String, TCertGetter> tcertGetterMap;
     private int tcertBatchSize;
 
     /**
@@ -150,7 +164,7 @@ class Member {
      * Get the enrollment info.
      * @returns {Enrollment} The enrollment.
      */
-    public String getEnrollment() {
+    public Enrollment getEnrollment() {    	
         return this.enrollment;
     };
 
@@ -159,7 +173,7 @@ class Member {
      * @returns {boolean} True if registered; otherwise, false.
      */
     public boolean isRegistered() {
-        return !enrollmentSecret.trim().isEmpty();
+        return this.isEnrolled() || !StringUtil.isNullOrEmpty(enrollmentSecret);
     }
 
     /**
@@ -167,14 +181,15 @@ class Member {
      * @returns {boolean} True if enrolled; otherwise, false.
      */
     public boolean isEnrolled() {
-        return !enrollment.trim().isEmpty();
+        return this.enrollment != null;
     }
 
     /**
      * Register the member.
      * @param cb Callback of the form: {function(err,enrollmentSecret)}
+     * @throws RegistrationException 
      */
-    public void register(RegistrationRequest registrationRequest) {
+    public void register(RegistrationRequest registrationRequest) throws RegistrationException {
         if (!registrationRequest.enrollmentID.equals(getName())) {
             throw new RuntimeException("registration enrollment ID and member name are not equal");
         }
@@ -184,7 +199,8 @@ class Member {
             return;
         }
 
-        memberServices.register(registrationRequest, chain.getRegistrar());
+        this.enrollmentSecret = memberServices.register(registrationRequest, chain.getRegistrar());
+        this.saveState();
 
         /* TODO implement logic present in callback function
         debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
@@ -201,8 +217,9 @@ class Member {
      * Enroll the member and return the enrollment results.
      * @param enrollmentSecret The password or enrollment secret as returned by register.
      * @param cb Callback to report an error if it occurs
+     * @throws EnrollmentException 
      */
-    public String enroll(String enrollmentSecret) {
+    public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {
         if (null != enrollment) {
             debug("Previously enrolled, [enrollment=%j]", enrollment);
             return enrollment;
@@ -213,44 +230,24 @@ class Member {
         req.setEnrollmentSecret(enrollmentSecret);
         debug("Enrolling [req=%j]", req);
         
-        memberServices.enroll(req);
-        
-        return ""; //TODO return correct enrollment info
-        /*TODO implement callback logic
-        , function (err:Error, enrollment:Enrollment) {
-            debug("[memberServices.enroll] err=%s, enrollment=%j", err, enrollment);
-            if (err) return cb(err);
-            self.enrollment = enrollment;
-            // Generate queryStateKey
-            self.enrollment.queryStateKey = self.chain.cryptoPrimitives.generateNonce();
-
-            // Save state
-            self.saveState(function (err) {
-                if (err) return cb(err);
-
-                // Unmarshall chain key
-                // TODO: during restore, unmarshall enrollment.chainKey
-                debug("[memberServices.enroll] Unmarshalling chainKey");
-                var ecdsaChainKey = self.chain.cryptoPrimitives.ecdsaPEMToPublicKey(self.enrollment.chainKey);
-                self.enrollment.enrollChainKey = ecdsaChainKey;
-
-                cb(null, enrollment);
-            });
-        });
-        */
+        this.enrollment = memberServices.enroll(req);
+        this.saveState();
+        return this.enrollment;
     }
 
     /**
      * Perform both registration and enrollment.
-     * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
+     * @throws RegistrationException 
+     * @throws EnrollmentException 
      */
-    public void registerAndEnroll(RegistrationRequest registrationRequest) {
+    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         if (null != enrollment) {
             debug("previously enrolled, enrollment=%j", enrollment);
             return ;
         }
 
         register(registrationRequest);
+        enroll(this.enrollmentSecret);
         
         /* TODO implement the callback logic
            function (err, enrollmentSecret) {
@@ -342,7 +339,17 @@ class Member {
     * @param cb Callback of the form: {function(err}
     */
    public void saveState() {
-      keyValStore.setValue(keyValStoreName, this.toString());
+	  ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	  try {
+		ObjectOutputStream oos = new ObjectOutputStream(bos);
+		oos.writeObject(this);
+		oos.flush();
+		keyValStore.setValue(keyValStoreName, Hex.toHexString(bos.toByteArray()));
+		bos.close();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} 
    }
 
    /**
@@ -350,11 +357,31 @@ class Member {
     * @param cb Callback of the form: function(err}
     */
    public void restoreState() {
-      String memberStr = keyValStore.getValue(keyValStoreName);
-      if(null != memberStr) {
-             // The member was found in the key value store, so restore the state.
-             fromString(memberStr);
-         }
+		String memberStr = keyValStore.getValue(keyValStoreName);
+		if (null != memberStr) {
+			// The member was found in the key value store, so restore the
+			// state.
+			byte[] serialized = Hex.decode(memberStr);
+			ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
+			try {
+				ObjectInputStream ois = new ObjectInputStream(bis);
+				Member state = (Member)ois.readObject();
+				if (state != null) {
+					this.name = state.name;
+			        this.roles = state.roles;
+			        this.account = state.account;
+			        this.affiliation = state.affiliation;
+			        this.enrollmentSecret = state.enrollmentSecret;
+			        this.enrollment = state.enrollment;
+				} else {
+					// TODO: Raise a warning that object could not be loaded
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			fromString(memberStr);
+		}
    }
 
     /**
@@ -363,17 +390,31 @@ class Member {
      */
     public void fromString(String str) {
 //        Member state = JSON.parse(str);
-    	Member state = null; //TODO implement JSON.parse()
+    	/*Member state = null; //TODO implement JSON.parse()
         if (state.name != this.getName()) throw new RuntimeException("name mismatch: '" + state.name + "' does not equal '" + this.getName() + "'");
         this.name = state.name;
         this.roles = state.roles;
         this.account = state.account;
         this.affiliation = state.affiliation;
         this.enrollmentSecret = state.enrollmentSecret;
-        this.enrollment = state.enrollment;
+        this.enrollment = state.enrollment;*/
     }
+    
+    
 
-    /**
+    public String getEnrollmentSecret() {
+		return enrollmentSecret;
+	}
+
+	public void setEnrollmentSecret(String enrollmentSecret) {
+		this.enrollmentSecret = enrollmentSecret;
+	}
+
+	public void setEnrollment(Enrollment enrollment) {
+		this.enrollment = enrollment;
+	}
+
+	/**
      * Save the current state of this member as a string
      * @return {string} The state of this member as a string
      */

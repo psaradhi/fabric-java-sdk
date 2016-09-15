@@ -1,11 +1,15 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
+import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 
 /**
  * The class representing a chain with which the client SDK interacts.
@@ -101,8 +105,9 @@ public class Chain {
     /**
      * Set the member services URL
      * @param {string} url Member services URL of the form: "grpc://host:port" or "grpcs://host:port"
+     * @throws CertificateException 
      */
-    public void setMemberServicesUrl(String url, String pem) {
+    public void setMemberServicesUrl(String url, String pem) throws CertificateException {
         this.setMemberServices(new MemberServicesImpl(url,pem));
     }
 
@@ -220,7 +225,6 @@ public class Chain {
 
     /**
      * Get the user member named 'name'.
-     * @param cb Callback of form "function(err,Member)"
      */
     public Member getMember(String name) {
         if (null == keyValStore) throw new RuntimeException("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
@@ -256,10 +260,12 @@ public class Chain {
      * Register a user or other member type with the chain.
      * @param registrationRequest Registration information.
      * @param cb Callback with registration results
+     * @throws RegistrationException 
      */
-    public void register(RegistrationRequest registrationRequest) {
+    public Member register(RegistrationRequest registrationRequest) throws RegistrationException {
         Member member = getMember(registrationRequest.enrollmentID);
 	    member.register(registrationRequest);
+	    return member;
     }
 
     /**
@@ -268,19 +274,25 @@ public class Chain {
      * @param name The name of the user or other member to enroll.
      * @param secret The secret of the user or other member to enroll.
      * @param cb The callback to return the user or other member.
+     * @throws EnrollmentException 
      */
-    void enroll(String name, String secret) {
-        Member member = getMember(name);
+    Member enroll(String name, String secret) throws EnrollmentException {    	
+        Member member = getMember(name);        
         member.enroll(secret); // TODO add logic present in callback
+        members.put(name, member);
+        
+        return member;
     }
 
     /**
      * Register and enroll a user or other member type.
      * This assumes that a registrar with sufficient privileges has been set.
      * @param registrationRequest Registration information.
+     * @throws RegistrationException 
+     * @throws EnrollmentException 
      * @params
      */
-    Member registerAndEnroll(RegistrationRequest registrationRequest) {
+    Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         Member member = getMember(registrationRequest.enrollmentID);
         if (member.isEnrolled()) {
                debug("already enrolled");

@@ -18,7 +18,7 @@ public class PeerClientTest {
 		testChain = new Chain("chain1");		
 		try {
 			testChain.setMemberServicesUrl("grpc://localhost:7054", null);
-			testChain.setKeyValStore(new FileKeyValStore("/home/pardha/test.properties"));
+			testChain.setKeyValStore(new FileKeyValStore(System.getProperty("user.home")+"/test.properties"));
 			testChain.addPeer("grpc://localhost:7051", null);
 			Member registrar = testChain.getMember("admin");
 			if (!registrar.isEnrolled()) {

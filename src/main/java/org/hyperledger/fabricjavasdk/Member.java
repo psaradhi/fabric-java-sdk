@@ -1,29 +1,38 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 
 import io.netty.util.internal.StringUtil;
 
-class Member {
+class Member implements Serializable {	
+	private static final long serialVersionUID = 8077132186383604355L;
+
 	private static final Logger logger = Logger.getLogger(Member.class.getName());
 
-    private Chain chain;
+    private transient Chain chain;
     private String name;
     private ArrayList<String> roles;
     private String account;
     private String affiliation;
     private String enrollmentSecret;
     private Enrollment enrollment = null;
-    private MemberServices memberServices;
-    private KeyValStore keyValStore;
+    private transient MemberServices memberServices;
+    private transient KeyValStore keyValStore;
     private String keyValStoreName;
-    private Map<String, TCertGetter> tcertGetterMap;
+//    private Map<String, TCertGetter> tcertGetterMap;
     private int tcertBatchSize;
 
     /**
@@ -191,6 +200,7 @@ class Member {
         }
 
         this.enrollmentSecret = memberServices.register(registrationRequest, chain.getRegistrar());
+        this.saveState();
 
         /* TODO implement logic present in callback function
         debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
@@ -221,6 +231,7 @@ class Member {
         debug("Enrolling [req=%j]", req);
         
         this.enrollment = memberServices.enroll(req);
+        this.saveState();
         return this.enrollment;
     }
 
@@ -328,7 +339,17 @@ class Member {
     * @param cb Callback of the form: {function(err}
     */
    public void saveState() {
-      keyValStore.setValue(keyValStoreName, this.toString());
+	  ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	  try {
+		ObjectOutputStream oos = new ObjectOutputStream(bos);
+		oos.writeObject(this);
+		oos.flush();
+		keyValStore.setValue(keyValStoreName, Hex.toHexString(bos.toByteArray()));
+		bos.close();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} 
    }
 
    /**
@@ -336,11 +357,31 @@ class Member {
     * @param cb Callback of the form: function(err}
     */
    public void restoreState() {
-      String memberStr = keyValStore.getValue(keyValStoreName);
-      if(null != memberStr) {
-             // The member was found in the key value store, so restore the state.
-             fromString(memberStr);
-         }
+		String memberStr = keyValStore.getValue(keyValStoreName);
+		if (null != memberStr) {
+			// The member was found in the key value store, so restore the
+			// state.
+			byte[] serialized = Hex.decode(memberStr);
+			ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
+			try {
+				ObjectInputStream ois = new ObjectInputStream(bis);
+				Member state = (Member)ois.readObject();
+				if (state != null) {
+					this.name = state.name;
+			        this.roles = state.roles;
+			        this.account = state.account;
+			        this.affiliation = state.affiliation;
+			        this.enrollmentSecret = state.enrollmentSecret;
+			        this.enrollment = state.enrollment;
+				} else {
+					// TODO: Raise a warning that object could not be loaded
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			fromString(memberStr);
+		}
    }
 
     /**
@@ -349,14 +390,14 @@ class Member {
      */
     public void fromString(String str) {
 //        Member state = JSON.parse(str);
-    	Member state = null; //TODO implement JSON.parse()
+    	/*Member state = null; //TODO implement JSON.parse()
         if (state.name != this.getName()) throw new RuntimeException("name mismatch: '" + state.name + "' does not equal '" + this.getName() + "'");
         this.name = state.name;
         this.roles = state.roles;
         this.account = state.account;
         this.affiliation = state.affiliation;
         this.enrollmentSecret = state.enrollmentSecret;
-        this.enrollment = state.enrollment;
+        this.enrollment = state.enrollment;*/
     }
     
     

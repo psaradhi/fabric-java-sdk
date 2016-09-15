@@ -1,8 +1,11 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.io.Serializable;
+
 // Enrollment metadata
-public class Enrollment {
-    private String key;
+public class Enrollment implements Serializable {    
+	private static final long serialVersionUID = 550416591376968096L;
+	private String key;
     private String cert;
     private String chainKey;
     

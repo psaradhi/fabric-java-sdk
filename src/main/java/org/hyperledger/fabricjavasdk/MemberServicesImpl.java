@@ -10,6 +10,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -146,9 +147,9 @@ class MemberServicesImpl implements MemberServices {
     	try {
 			PrivateKey signKey = cryptoPrimitives.ecdsaKeyFromPrivate(Hex.decode(registrar.getEnrollment().getKey()));
 	    	debug("Retreived private key");
-			BigInteger[] signature = cryptoPrimitives.ecdsaSign(signKey, buffer);
+			byte[][] signature = cryptoPrimitives.ecdsaSign(signKey, buffer);
 	    	debug("Signed the request with key");
-			Signature sig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(signature[0].toByteArray())).setS(ByteString.copyFrom(signature[1].toByteArray())).build();
+			Signature sig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(signature[0])).setS(ByteString.copyFrom(signature[1])).build();
 			regReqBuilder.setSig(sig);
 	    	debug("Now sendingt register request");
 			Token token = this.ecaaClient.registerUser(regReqBuilder.build());
@@ -243,8 +244,8 @@ class MemberServicesImpl implements MemberServices {
             ECertCreateReq certReq = eCertCreateRequestBuilder.buildPartial();            		
             byte[] buf = certReq.toByteArray();
             
-            java.math.BigInteger[] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);
-            Signature protoSig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0].toByteArray())).setS(ByteString.copyFrom(sig[1].toByteArray())).build();
+            byte[][] sig = cryptoPrimitives.ecdsaSign(signingKeyPair.getPrivate(), buf);
+            Signature protoSig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(sig[0])).setS(ByteString.copyFrom(sig[1])).build();
             eCertCreateRequestBuilder = eCertCreateRequestBuilder.setSig(protoSig);
             
             eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
@@ -427,19 +428,12 @@ class MemberServicesImpl implements MemberServices {
     
     public static void main(String args[]) throws Exception {
 
-//    	String hex = "430369767a2fa435dace082e72063f085c9b3cfd34c2557c33e1e69b02d91b42ee21ad7aad7f9834550c2c127b6ffae0b373ec4f54757d6694d735154d33ff9fe68a2501e6967130638b6e14c855d6df5411e7de7372da90da7f34086d08310881404b12ff10af89b710f9978a5f9f4ecf0b9273b1342d74dd3a9712a";
-//    	
-//    	System.out.println(Arrays.toString(Hex.decode(hex)));
-//    	
-//    	if (true)
-//    		return;
     	Chain testChain = new Chain("chain1");
 
-			testChain.setMemberServicesUrl("grpc://localhost:7054", null);
-			testChain.setKeyValStore(new FileKeyValStore("/home/pardha/test.properties"));
-			testChain.addPeer("grpc://localhost:7051", null);			
-			Member registrar = testChain.enroll("admin", "Xurw3yU9zI0l");
-			
+		testChain.setMemberServicesUrl("grpc://localhost:7054", null);
+		testChain.setKeyValStore(new FileKeyValStore(System.getProperty("user.home")+"/test.properties"));
+		testChain.addPeer("grpc://localhost:7051", null);			
+		Member registrar = testChain.enroll("admin", "Xurw3yU9zI0l");
 		
     			
 //    	MemberServicesImpl msi = new MemberServicesImpl("grpc://localhost:7054", "");

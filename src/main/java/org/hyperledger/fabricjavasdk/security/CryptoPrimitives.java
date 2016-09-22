@@ -186,7 +186,7 @@ public class CryptoPrimitives {
 		return bcParams;
 	}
 
-	public BigInteger[] ecdsaSign(PrivateKey privateKey, byte[] data) throws CryptoException {
+	public byte[][] ecdsaSign(PrivateKey privateKey, byte[] data) throws CryptoException {
 		try {
 			byte[] encoded = hash(data, getHashDigest());
 			X9ECParameters params = SECNamedCurves.getByName(this.curveName);
@@ -197,7 +197,7 @@ public class CryptoPrimitives {
 			ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(((ECPrivateKey) privateKey).getS(), ecParams);
 			signer.init(true, privKey);
 			BigInteger[] sigs = signer.generateSignature(encoded);
-			return sigs;
+			return new byte[][]{sigs[0].toString().getBytes(), sigs[1].toString().getBytes()};
 		} catch (Exception e) {
 			throw new CryptoException("Could not sign the message using private key", e);
 		}

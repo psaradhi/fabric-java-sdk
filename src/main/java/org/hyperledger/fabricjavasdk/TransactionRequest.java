@@ -21,7 +21,7 @@ public class TransactionRequest {
     // Optionally provide a user certificate which can be used by chaincode to perform access control
     Certificate userCert;
     // Optionally provide additional metadata
-    Buffer metadata;
+    byte[] metadata;
     
     
 	public String getChaincodePath() {
@@ -66,10 +66,10 @@ public class TransactionRequest {
 	public void setUserCert(Certificate userCert) {
 		this.userCert = userCert;
 	}
-	public Buffer getMetadata() {
+	public byte[] getMetadata() {
 		return metadata;
 	}
-	public void setMetadata(Buffer metadata) {
+	public void setMetadata(byte[] metadata) {
 		this.metadata = metadata;
 	}
 }

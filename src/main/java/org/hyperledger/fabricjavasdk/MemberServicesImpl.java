@@ -1,16 +1,9 @@
 package org.hyperledger.fabricjavasdk;
 
-import java.math.BigInteger;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,9 +51,10 @@ class MemberServicesImpl implements MemberServices {
 
     /**
      * MemberServicesImpl constructor
-     * @param config The config information required by this member services implementation.
-     * @throws CertificateException 
-     * @returns {MemberServices} A MemberServices object.
+     * @param url URL for the membership services endpoint
+     * @param pem 
+     * @throws CertificateException
+
      */
     public MemberServicesImpl(String url, String pem) throws CertificateException {
     	Endpoint ep = new Endpoint(url, pem);
@@ -113,7 +107,6 @@ class MemberServicesImpl implements MemberServices {
      * Register the member and return an enrollment secret.
      * @param req Registration request with the following fields: name, role
      * @param registrar The identity of the registrar (i.e. who is performing the registration)
-     * @param cb Callback of the form: {function(err,enrollmentSecret)}
      */
     public String register(RegistrationRequest req, Member registrar) throws RegistrationException {
     	if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) {
@@ -160,52 +153,11 @@ class MemberServicesImpl implements MemberServices {
 		}
     	
     }       
-    	/* TODO implement register
-    	let self = this;
-        debug("MemberServicesImpl.register: req=%j", req);
-        if (!req.enrollmentID) return cb(new Error("missing req.enrollmentID"));
-        if (!registrar) return cb(new Error("chain registrar is not set"));
-        let protoReq = new _caProto.RegisterUserReq();
-        //TODO setId protoReq.setId({id:req.enrollmentID});
-        protoReq.setRole(rolesToMask(req.roles));
-        protoReq.setAffiliation(req.affiliation);
-        // Create registrar info
-        protoRegistrar = new _caProto.Registrar();
-        //TODO setId protoRegistrar.setId({id:registrar.getName()});
-        if (req.registrar) {
-            if (req.registrar.roles) {
-               protoRegistrar.setRoles(req.registrar.roles);
-            }
-            if (req.registrar.delegateRoles) {
-               protoRegistrar.setDelegateRoles(req.registrar.delegateRoles);
-            }
-        }
-        protoReq.setRegistrar(protoRegistrar);
-        // Sign the registration request
-        var buf = protoReq.toBuffer();
-        
-        var signKey = self.cryptoPrimitives.ecdsaKeyFromPrivate(registrar.getEnrollment().key, "hex");
-        var sig = self.cryptoPrimitives.ecdsaSign(signKey, buf);
-        protoReq.setSig( new _caProto.Signature(
-            {
-                type: _caProto.CryptoType.ECDSA,
-                r: new Buffer(sig.r.toString()),
-                s: new Buffer(sig.s.toString())
-            }
-        ));
-        // Send the registration request
-        self.ecaaClient.registerUser(protoReq, function (err, token) {
-            debug("register %j: err=%j, token=%s", protoReq, err, token);
-            if (cb) return cb(err, token ? token.tok.toString() : null);
-        });
-        */
- 
-
    
 	/**
-     * Enroll the member and return an opaque member object
+     * Enroll the member with member service
      * @param req Enrollment request with the following fields: name, enrollmentSecret
-     * @param cb Callback of the form: {function(err,{key,cert,chainKey})}
+     * @return enrollment
      */
     public Enrollment enroll(EnrollmentRequest req) throws EnrollmentException {
     	
@@ -265,15 +217,10 @@ class MemberServicesImpl implements MemberServices {
 		}
         
 
-    } // end enroll
+    } 
 
     /**
-     * Get an array of transaction certificates (tcerts).
-     * @param {Object} req Request of the form: {name,enrollment,num} where
-     * 'name' is the member name,
-     * 'enrollment' is what was returned by enroll, and
-     * 'num' is the number of transaction contexts to obtain.
-     * @param {function(err,[Object])} cb The callback function which is called with an error as 1st arg and an array of tcerts as 2nd arg.
+     *
      */
     public void getTCertBatch(GetTCertBatchRequest req) {
     	
@@ -392,7 +339,9 @@ class MemberServicesImpl implements MemberServices {
 
     } // end processTCertBatch
     
-    // Convert a list of member type names to the role mask currently used by the peer
+    /*
+     *  Convert a list of member type names to the role mask currently used by the peer
+     */
     private int rolesToMask(ArrayList<String> roles) {
         int mask = 0;
         if (roles != null) {

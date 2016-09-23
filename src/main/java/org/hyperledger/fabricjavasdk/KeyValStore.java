@@ -7,15 +7,14 @@ public interface KeyValStore {
 
     /**
      * Get the value associated with name.
-     * @param name
-     * @param cb function(err,value)
+     * @param name     
      */
     String getValue(String name);
 
     /**
      * Set the value associated with name.
      * @param name
-     * @param cb function(err)
+     * @param value
      */
     void setValue(String name, String value);
 

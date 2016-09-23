@@ -138,7 +138,7 @@ public class DevopsClient {
 	          
 }
 
-  public void invoke() {
+  public void invoke() { //TODO: What is the purpose of this invoke()?
 	    InvokeRequest request = new InvokeRequest();
 	    request.setArgs(new ArrayList<String>(Arrays.asList("invoke", "a", "b", "20")));
 	    invoke(request);
@@ -149,7 +149,7 @@ public class DevopsClient {
   String chaincodeName = "";
   
 
-  public void deploy() {
+  public void deploy() { //TODO: What is the purpose of this invoke()?
 	    DeployRequest request = new DeployRequest();
 	    request.setArgs(new ArrayList<String>(Arrays.asList("init", "a", "1000", "b", "2000")));
 	    deploy(request);

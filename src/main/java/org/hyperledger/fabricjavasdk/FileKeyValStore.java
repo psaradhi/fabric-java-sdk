@@ -23,7 +23,7 @@ public class FileKeyValStore implements KeyValStore {
     /**
      * Get the value associated with name.
      * @param name
-     * @param cb function(err,value)
+     * @return value associated with the name
      */
     public String getValue(String name) {    	
 	    	Properties properties = loadProperties();
@@ -47,7 +47,7 @@ public class FileKeyValStore implements KeyValStore {
     /**
      * Set the value associated with name.
      * @param name
-     * @param cb function(err)
+     * @param value
      */
     public void setValue(String name, String value) {
     	Properties properties = loadProperties();

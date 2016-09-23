@@ -22,7 +22,7 @@ class Peer {
      * @param {Chain} The chain of which this peer is a member.
      * @returns {Peer} The new peer.
      */
-    public Peer(String url, Chain chain, String pem) {
+    public Peer(String url, String pem, Chain chain) {
         this.url = url;
         this.chain = chain;   
         Endpoint ep = new Endpoint(url, pem);

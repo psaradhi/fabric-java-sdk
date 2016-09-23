@@ -1,7 +1,6 @@
 package org.hyperledger.fabricjavasdk;
 
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -10,6 +9,7 @@ import java.util.logging.Logger;
 
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
 
 /**
  * The class representing a chain with which the client SDK interacts.
@@ -54,15 +54,15 @@ public class Chain {
     private int invokeWaitTime = 5;
 
     // The crypto primitives object
-    Object cryptoPrimitives;
+    CryptoPrimitives cryptoPrimitives;
 
     public Chain(String name) {
         this.name = name;
     }
 
     /**
-     * Get the chain name.
-     * @returns The name of the chain.
+     * Get the chain name
+     * @returns The name of the chain
      */
     public String getName() {
         return this.name;
@@ -70,11 +70,12 @@ public class Chain {
 
     /**
      * Add a peer given an endpoint specification.
-     * @param endpoint The endpoint of the form: { url: "grpcs://host:port", tls: { .... } }
-     * @returns {Peer} Returns a new peer.
+     * @param url URL of the peer
+     * @param pem
+     * @returns a new peer.
      */
     public Peer addPeer(String url, String pem) {
-        Peer peer = new Peer(url, this, pem);
+        Peer peer = new Peer(url, pem, this);
         this.peers.add(peer);
         return peer;
     }
@@ -87,16 +88,16 @@ public class Chain {
     }
 
     /**
-     * Get the member whose credentials are used to register and enroll other users, or undefined if not set.
-     * @param {Member} The member whose credentials are used to perform registration, or undefined if not set.
+     * Get the registrar associated with this chain
+     * @return The member whose credentials are used to perform registration, or undefined if not set.
      */
     public Member getRegistrar() {
         return this.registrar;
     }
 
     /**
-     * Set the member whose credentials are used to register and enroll other users.
-     * @param {Member} registrar The member whose credentials are used to perform registration.
+     * Set the registrar
+     * @param registrar The member whose credentials are used to perform registration.
      */
     public void setRegistrar(Member registrar) {
         this.registrar = registrar;
@@ -104,7 +105,8 @@ public class Chain {
 
     /**
      * Set the member services URL
-     * @param {string} url Member services URL of the form: "grpc://host:port" or "grpcs://host:port"
+     * @param url Member services URL of the form: "grpc://host:port" or "grpcs://host:port"
+     * @param pem
      * @throws CertificateException 
      */
     public void setMemberServicesUrl(String url, String pem) throws CertificateException {
@@ -113,14 +115,15 @@ public class Chain {
 
     /**
      * Get the member service associated this chain.
-     * @returns {MemberService} Return the current member service, or undefined if not set.
+     * @returns MemberServices associated with the chain, or undefined if not set.
      */
     public MemberServices getMemberServices() {
         return this.memberServices;
     };
 
     /**
-     * Set the member service associated this chain.  This allows the default implementation of member service to be overridden.
+     * Set the member service
+     * @param memberServices The MemberServices instance
      */
     public void setMemberServices(MemberServices memberServices) {
         this.memberServices = memberServices;
@@ -131,6 +134,7 @@ public class Chain {
 
     /**
      * Determine if security is enabled.
+     * @return true if security is enabled, false otherwise
      */
     public boolean isSecurityEnabled() {
         return this.memberServices != null;
@@ -138,6 +142,7 @@ public class Chain {
 
     /**
      * Determine if pre-fetch mode is enabled to prefetch tcerts.
+     * @return true if  pre-fetch mode is enabled, false otherwise
      */
     public boolean isPreFetchMode() {
         return this.preFetchMode;
@@ -173,14 +178,15 @@ public class Chain {
 
     /**
      * Set the deploy wait time in seconds.
-     * @param secs
+     * @param waitTime Deploy wait time
      */
-    public void setDeployWaitTime(int secs) {
-        this.deployWaitTime = secs;
+    public void setDeployWaitTime(int waitTime) {
+        this.deployWaitTime = waitTime;
     }
 
     /**
-     * Get the invoke wait time in seconds.
+     * Get the invoke wait time in seconds
+     * @return invoke wait time
      */
     public int getInvokeWaitTime() {
         return this.invokeWaitTime;
@@ -188,15 +194,15 @@ public class Chain {
 
     /**
      * Set the invoke wait time in seconds.
-     * @param secs
+     * @param waitTime Invoke wait time
      */
-    public void setInvokeWaitTime(int secs) {
-        this.invokeWaitTime = secs;
+    public void setInvokeWaitTime(int waitTime) {
+        this.invokeWaitTime = waitTime;
     }
 
     /**
      * Get the key val store implementation (if any) that is currently associated with this chain.
-     * @returns {KeyValStore} Return the current KeyValStore associated with this chain, or undefined if not set.
+     * @returnsThe current KeyValStore associated with this chain, or undefined if not set.
      */
     public KeyValStore getKeyValStore() {
         return this.keyValStore;
@@ -224,14 +230,22 @@ public class Chain {
     }
 
     /**
-     * Get the user member named 'name'.
+     * Get the member with a given name
+     * @return member
      */
     public Member getMember(String name) {
         if (null == keyValStore) throw new RuntimeException("No key value store was found.  You must first call Chain.configureKeyValStore or Chain.setKeyValStore");
         if (null == memberServices) throw new RuntimeException("No member services was found.  You must first call Chain.configureMemberServices or Chain.setMemberServices");
-        return getMemberHelper(name); 
-        //TODO add logic implemented in callback
-//        return null; //TODO return correct member
+        
+        // Try to get the member state from the cache
+        Member member = (Member) members.get(name);
+        if (null != member) return member;
+        
+        // Create the member and try to restore it's state from the key value store (if found).
+        member = new Member(name, this);
+        member.restoreState();
+        return member;
+        
     }
 
     /**
@@ -242,25 +256,12 @@ public class Chain {
     Member getUser(String name) {
         return getMember(name);
     }
-
-    // Try to get the member from cache.
-    // If not found, create a new one, restore the state if found, and then store in cache.
-    private Member getMemberHelper(String name) {
-        // Try to get the member state from the cache
-        Member member = (Member) members.get(name);
-        if (null != member) return member;
-        
-        // Create the member and try to restore it's state from the key value store (if found).
-        member = new Member(name, this);
-        member.restoreState(); // TODO add logic present in callback 
-        return member;
-    }
+    
 
     /**
      * Register a user or other member type with the chain.
      * @param registrationRequest Registration information.
-     * @param cb Callback with registration results
-     * @throws RegistrationException 
+     * @throws RegistrationException if the registration fails
      */
     public Member register(RegistrationRequest registrationRequest) throws RegistrationException {
         Member member = getMember(registrationRequest.enrollmentID);
@@ -272,13 +273,14 @@ public class Chain {
      * Enroll a user or other identity which has already been registered.
      * If the user has already been enrolled, this will still succeed.
      * @param name The name of the user or other member to enroll.
-     * @param secret The secret of the user or other member to enroll.
-     * @param cb The callback to return the user or other member.
+     * @param secret The enrollment secret of the user or other member to enroll.
      * @throws EnrollmentException 
      */
+    
+  //TODO: shouldn't we throw error if user is already enrolled?
     Member enroll(String name, String secret) throws EnrollmentException {    	
         Member member = getMember(name);        
-        member.enroll(secret); // TODO add logic present in callback
+        member.enroll(secret);
         members.put(name, member);
         
         return member;
@@ -289,8 +291,7 @@ public class Chain {
      * This assumes that a registrar with sufficient privileges has been set.
      * @param registrationRequest Registration information.
      * @throws RegistrationException 
-     * @throws EnrollmentException 
-     * @params
+     * @throws EnrollmentException
      */
     Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         Member member = getMember(registrationRequest.enrollmentID);
@@ -300,12 +301,12 @@ public class Chain {
         }
 
         member.registerAndEnroll(registrationRequest);
-        return member;//TODO add logic implemented in callback
+        return member;
     }
 
     /**
      * Send a transaction to a peer.
-     * @param tx A transaction
+     * @param tx The transaction
      * @param eventEmitter An event emitter
      */
     void sendTransaction(Transaction tx) {

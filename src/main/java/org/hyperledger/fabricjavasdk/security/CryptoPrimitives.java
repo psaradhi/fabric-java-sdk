@@ -54,8 +54,6 @@ public class CryptoPrimitives {
 	private String hashAlgorithm;
 	private int securityLevel;
 	private String curveName;
-	private Digest hashDigest;
-
 	private static final String SECURITY_PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
 	private static final String ASYMMETRIC_KEY_TYPE = "EC";
 	private static final String KEY_AGREEMENT_ALGORITHM = "ECDH";
@@ -126,19 +124,15 @@ public class CryptoPrimitives {
 			keyAgreement.doPhase(ephemeralPublicKey, true);
 			byte[] sharedSecret = keyAgreement.generateSecret();
 
-			System.out.println("Z - sharedSecret=" + toPrintByteArray(sharedSecret));
-
 			// Deriving encryption and mac keys.
 			HKDFBytesGenerator hkdfBytesGenerator = new HKDFBytesGenerator(getHashDigest());
 
 			hkdfBytesGenerator.init(new HKDFParameters(sharedSecret, null, null));
 			byte[] encryptionKey = new byte[SYMMETRIC_KEY_BYTE_COUNT];
 			hkdfBytesGenerator.generateBytes(encryptionKey, 0, SYMMETRIC_KEY_BYTE_COUNT);
-			System.out.println("kE - encryptionKey=" + toPrintByteArray(encryptionKey));
 
 			byte[] macKey = new byte[MAC_KEY_BYTE_COUNT];
 			hkdfBytesGenerator.generateBytes(macKey, 0, MAC_KEY_BYTE_COUNT);
-			System.out.println("kM - macKey=" + toPrintByteArray(macKey));
 
 			// Verifying Message Authentication Code (aka mac/tag)
 			byte[] expectedTag = calculateMac(macKey, encryptedMessage);
@@ -150,8 +144,6 @@ public class CryptoPrimitives {
 			byte[] iv = Arrays.copyOfRange(encryptedMessage, 0, 16);
 			byte[] encrypted = Arrays.copyOfRange(encryptedMessage, 16, encryptedMessage.length);
 			byte[] output = aesDecrypt(encryptionKey, iv, encrypted);
-
-			System.out.println("Original data:" + toPrintByteArray(output));
 
 			return output;
 
@@ -236,31 +228,11 @@ public class CryptoPrimitives {
 		// this.suite = this.algorithm.toLowerCase() + '-' + this.securityLevel;
 		if (this.securityLevel == 256) {
 			this.curveName = "secp256r1";
+			//TODO: HashOutputSize=32 ?
 		} else if (this.securityLevel == 384) {
 			this.curveName = "secp384r1";
+			//TODO: HashOutputSize=48 ?
 		}
-
-		// switch (this.suite) {
-		// case "sha3-256":
-		// debug("Using sha3-256");
-		// this.hashFunction = sha3_256;
-		// this.hashFunctionKeyDerivation = hashPrimitives.hash_sha3_256;
-		// this.hashOutputSize = 32;
-		// break;
-		// case "sha3-384":
-		// debug("Using sha3-384");
-		// this.hashFunction = sha3_384;
-		// this.hashFunctionKeyDerivation = hashPrimitives.hash_sha3_384;
-		// this.hashOutputSize = 48;
-		// break;
-		// case "sha2-256":
-		// debug("Using sha2-256");
-		// this.hashFunction = hashPrimitives.sha2_256;
-		// this.hashFunctionKeyDerivation = hashPrimitives.hash_sha2_256;
-		// this.hashOutputSize = 32;
-		// break;
-		// }
-
 	}
 	
 	private Digest getHashDigest() {
@@ -273,7 +245,7 @@ public class CryptoPrimitives {
 		return new SHA256Digest(); // default Digest? 
 	}
 
-	// TODO: Only for debugging
+	/*// TODO: Only for debugging
 	private String toPrintByteArray(byte[] data) {
 		String s = "[";
 		for (int i = 0; i < data.length; i++) {
@@ -287,6 +259,6 @@ public class CryptoPrimitives {
 		}
 		s += "]";
 		return s;
-	}
+	} */
 
 }

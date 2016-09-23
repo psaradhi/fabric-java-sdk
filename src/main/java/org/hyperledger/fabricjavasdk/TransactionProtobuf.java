@@ -4,18 +4,18 @@ package org.hyperledger.fabricjavasdk;
  */
 public interface TransactionProtobuf {
     String getType();
-    void setCert(Buffer cert);
-    void setSignature(Buffer sig);
+    void setCert(byte[] cert);
+    void setSignature(byte[] sig);
     void setConfidentialityLevel(int value);
     int  getConfidentialityLevel();
     void setConfidentialityProtocolVersion(String version);
-    void setNonce(Buffer nonce);
-    void setToValidators(Buffer buffer);
-    Buffer getChaincodeID();
-    void setChaincodeID(Buffer buffer);
-    Buffer getMetadata();
-    void setMetadata(Buffer buffer);
-    Buffer getPayload();
-    void setPayload(Buffer buffer);
-    Buffer toBuffer();
+    void setNonce(byte[] nonce);
+    void setToValidators(byte[] buffer);
+    byte[] getChaincodeID();
+    void setChaincodeID(byte[] buffer);
+    byte[] getMetadata();
+    void setMetadata(byte[] buffer);
+    byte[] getPayload();
+    void setPayload(byte[] buffer);
+    byte[] toByteArray();
 }

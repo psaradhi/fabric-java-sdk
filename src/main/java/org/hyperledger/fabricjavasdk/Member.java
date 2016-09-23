@@ -7,7 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +36,7 @@ class Member implements Serializable {
 
     /**
      * Constructor for a member.
-     * @param cfg {string | RegistrationRequest} The member name or registration request.
+     * @param cfg {string | RegistrationRequest} The member name or registration request. //TODO: Refator this into two methods
      * @returns {Member} A member who is neither registered nor enrolled.
      */
 
@@ -186,7 +185,7 @@ class Member implements Serializable {
 
     /**
      * Register the member.
-     * @param cb Callback of the form: {function(err,enrollmentSecret)}
+     * @param registrationRequest the registration request
      * @throws RegistrationException 
      */
     public void register(RegistrationRequest registrationRequest) throws RegistrationException {
@@ -194,7 +193,8 @@ class Member implements Serializable {
             throw new RuntimeException("registration enrollment ID and member name are not equal");
         }
 
-        if (null != enrollmentSecret) {
+        if (null != enrollmentSecret) { //TODO: Should we tell the user an error? Not throwing error 
+        								// gives false impression that the call has been succeeded
             debug("previously registered, enrollmentSecret=%s", enrollmentSecret);
             return;
         }
@@ -216,11 +216,12 @@ class Member implements Serializable {
     /**
      * Enroll the member and return the enrollment results.
      * @param enrollmentSecret The password or enrollment secret as returned by register.
-     * @param cb Callback to report an error if it occurs
+     * @return enrollment details 
      * @throws EnrollmentException 
      */
     public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {
-        if (null != enrollment) {
+        if (null != enrollment) { //TODO: Should we tell the user an error? Not throwing error 
+								  // gives false impression that the call has been succeeded
             debug("Previously enrolled, [enrollment=%j]", enrollment);
             return enrollment;
         }
@@ -262,8 +263,7 @@ class Member implements Serializable {
 
     /**
      * Issue a deploy request on behalf of this member.
-     * @param deployRequest {Object}
-     * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
+     * @param deployRequest the request
      */
     public void deploy(DeployRequest deployRequest) {
         debug("Member.deploy");
@@ -273,8 +273,7 @@ class Member implements Serializable {
 
     /**
      * Issue a invoke request on behalf of this member.
-     * @param invokeRequest {Object}
-     * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
+     * @param invokeRequest the request
      */
     public void invoke(InvokeRequest invokeRequest) {
         debug("Member.invoke");
@@ -284,8 +283,7 @@ class Member implements Serializable {
 
     /**
      * Issue a query request on behalf of this member.
-     * @param queryRequest {Object}
-     * @returns {TransactionContext} Emits 'submitted', 'complete', and 'error' events.
+     * @param queryRequest the request
      */
     public void query(QueryRequest queryRequest) {
         debug("Member.query");
@@ -296,7 +294,7 @@ class Member implements Serializable {
     /**
      * Create a transaction context with which to issue build, deploy, invoke, or query transactions.
      * Only call this if you want to use the same tcert for multiple transactions.
-     * @param {Object} tcert A transaction certificate from member services.  This is optional.
+     * @param tcert A transaction certificate from member services.  This is optional.
      * @returns A transaction context.
      */
     public TransactionContext newTransactionContext(TCert tcert) {
@@ -306,7 +304,6 @@ class Member implements Serializable {
     /**
      * Get a user certificate.
      * @param attrs The names of attributes to include in the user certificate.
-     * @param cb A GetTCertCallback
      */
     public void getUserCert(String[] attrs) {
         this.getNextTCert(attrs);
@@ -314,7 +311,6 @@ class Member implements Serializable {
 
     /**
    * Get the next available transaction certificate with the appropriate attributes.
-   * @param cb
    */
    public void getNextTCert(String[] attrs) {
 
@@ -336,7 +332,6 @@ class Member implements Serializable {
 
    /**
     * Save the state of this member to the key value store.
-    * @param cb Callback of the form: {function(err}
     */
    public void saveState() {
 	  ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -354,7 +349,6 @@ class Member implements Serializable {
 
    /**
     * Restore the state of this member from the key value store (if found).  If not found, do nothing.
-    * @param cb Callback of the form: function(err}
     */
    public void restoreState() {
 		String memberStr = keyValStore.getValue(keyValStoreName);
@@ -379,28 +373,9 @@ class Member implements Serializable {
 			} catch (IOException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			fromString(memberStr);
+			}			
 		}
    }
-
-    /**
-     * Get the current state of this member as a string
-     * @return {string} The state of this member as a string
-     */
-    public void fromString(String str) {
-//        Member state = JSON.parse(str);
-    	/*Member state = null; //TODO implement JSON.parse()
-        if (state.name != this.getName()) throw new RuntimeException("name mismatch: '" + state.name + "' does not equal '" + this.getName() + "'");
-        this.name = state.name;
-        this.roles = state.roles;
-        this.account = state.account;
-        this.affiliation = state.affiliation;
-        this.enrollmentSecret = state.enrollmentSecret;
-        this.enrollment = state.enrollment;*/
-    }
-    
-    
 
     public String getEnrollmentSecret() {
 		return enrollmentSecret;
@@ -413,25 +388,6 @@ class Member implements Serializable {
 	public void setEnrollment(Enrollment enrollment) {
 		this.enrollment = enrollment;
 	}
-
-	/**
-     * Save the current state of this member as a string
-     * @return {string} The state of this member as a string
-     */
-    public String toString() {
-    	/*TODO implement toString()
-        let state = {
-            name: self.name,
-            roles: self.roles,
-            account: self.account,
-            affiliation: self.affiliation,
-            enrollmentSecret: self.enrollmentSecret,
-            enrollment: self.enrollment
-        };
-        return JSON.stringify(state);
-        */
-    	return "";
-    }
 
     String toKeyValStoreName(String name) {
         return "member." + name;

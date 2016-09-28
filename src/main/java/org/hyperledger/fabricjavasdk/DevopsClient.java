@@ -1,41 +1,29 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
+import org.hyperledger.fabricjavasdk.util.Logger;
+
+import com.google.protobuf.ByteString;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
-import protos.Fabric.Response;
 import protos.Chaincode.ChaincodeDeploymentSpec;
 import protos.Chaincode.ChaincodeInvocationSpec;
 import protos.Chaincode.ChaincodeSpec;
 import protos.DevopsGrpc;
-import protos.PeerGrpc;
 import protos.DevopsGrpc.DevopsBlockingStub;
 import protos.DevopsGrpc.DevopsStub;
-import protos.PeerGrpc.PeerBlockingStub;
-import protos.PeerGrpc.PeerStub;
-
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Timestamp;
+import protos.Fabric.Response;
 
 /**
  * Sample client code that makes gRPC calls to the server.
  */
 public class DevopsClient {
-  private static final Logger logger = Logger.getLogger(DevopsClient.class.getName());
+  private static final Logger logger = Logger.getLogger(DevopsClient.class);
 
   private final ManagedChannel channel;
   private final DevopsBlockingStub blockingStub;
@@ -62,7 +50,7 @@ public class DevopsClient {
   }
   
   public void query(QueryRequest request) {
-	    info("query");
+	    logger.info("query");
 
 	    protos.Chaincode.ChaincodeInvocationSpec ispec = getInvocationSpec(request);
 
@@ -70,10 +58,10 @@ public class DevopsClient {
 		try {
 	      response = blockingStub.query(ispec);
 	    } catch (StatusRuntimeException e) {
-	      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+	      logger.warn("RPC failed: %s", e.getStatus());
 	      return;
 	    }
-	      info("Status: \"{0}\" at {1}, {2}",
+	      logger.info("Status: \"%s\" at %s, %s",
 	          response.getStatusValue(),
 	          response.getStatus().name(),
 	          String.valueOf(response.getMsg().toStringUtf8()));
@@ -120,7 +108,7 @@ public class DevopsClient {
   
 
   public void invoke(InvokeRequest request) {
-	    info("invoke");
+	    logger.info("invoke");
 	  
 	    protos.Chaincode.ChaincodeInvocationSpec ispec = getInvocationSpec(request);
 
@@ -128,10 +116,10 @@ public class DevopsClient {
 		try {
 	      response = blockingStub.invoke(ispec);
 	    } catch (StatusRuntimeException e) {
-	      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+	      logger.warn("RPC failed: %s", e.getStatus());
 	      return;
 	    }
-	      info("Status: \"{0}\" at {1}, {2}",
+	      logger.info("Status: \"%s\" at %s, %s",
 	          response.getStatusValue(),
 	          response.getStatus().name(),
 	          String.valueOf(response.getMsg().toStringUtf8()));
@@ -158,18 +146,18 @@ public class DevopsClient {
    * Blocking unary call example.  Calls getFeature and prints the response.
    */
   public void deploy(DeployRequest request) {
-    info("deploy	");
+    logger.info("deploy	");
 
     ChaincodeSpec spec = getChaincodeSpec(request);
     ChaincodeDeploymentSpec response;
 	try {
       response = blockingStub.deploy(spec);
     } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      logger.warn("RPC failed: %s", e.getStatus());
       return;
     }
 		chaincodeName =           response.getChaincodeSpec().getChaincodeID().getName();
-      info("Status: \"{0}\" at {1}, {2}",
+      logger.info("Status: \"%s\" at %s, %s",
           response.getChaincodeSpec().getChaincodeID().getName(),
           response.getExecEnv().toString(),
           response.getExecEnv().toString());
@@ -190,10 +178,6 @@ public class DevopsClient {
     } finally {
       client.shutdown();
     }
-  }
-
-  private static void info(String msg, Object... params) {
-    logger.log(Level.INFO, msg, params);
   }
 
 }

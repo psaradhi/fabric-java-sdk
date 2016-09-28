@@ -4,18 +4,17 @@ import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
+import org.hyperledger.fabricjavasdk.util.Logger;
 
 /**
  * The class representing a chain with which the client SDK interacts.
  */
 public class Chain {
-	private static final Logger logger = Logger.getLogger(Chain.class.getName());
+	private static final Logger logger = Logger.getLogger(Chain.class);
 
     // Name of the chain is only meaningful to the client
     private String name;
@@ -296,7 +295,7 @@ public class Chain {
     Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         Member member = getMember(registrationRequest.enrollmentID);
         if (member.isEnrolled()) {
-               debug("already enrolled");
+               logger.debug("already enrolled");
                return member;
         }
 
@@ -344,12 +343,4 @@ public class Chain {
     */
     }
     
-    private static void info(String msg, Object... params) {
-        logger.log(Level.INFO, msg, params);
-      }
-    private static void debug(String msg, Object... params) {
-        logger.log(Level.FINE, msg, params);
-      }
-
-
 }

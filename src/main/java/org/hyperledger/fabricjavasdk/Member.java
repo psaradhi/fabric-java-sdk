@@ -7,19 +7,18 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
+import org.hyperledger.fabricjavasdk.util.Logger;
 
 import io.netty.util.internal.StringUtil;
 
 class Member implements Serializable {	
 	private static final long serialVersionUID = 8077132186383604355L;
 
-	private static final Logger logger = Logger.getLogger(Member.class.getName());
+	private static final Logger logger = Logger.getLogger(Member.class);
 
     private transient Chain chain;
     private String name;
@@ -160,7 +159,7 @@ class Member implements Serializable {
     }
 
     /**
-     * Get the enrollment info.
+     * Get the enrollment logger.info.
      * @returns {Enrollment} The enrollment.
      */
     public Enrollment getEnrollment() {    	
@@ -195,7 +194,7 @@ class Member implements Serializable {
 
         if (null != enrollmentSecret) { //TODO: Should we tell the user an error? Not throwing error 
         								// gives false impression that the call has been succeeded
-            debug("previously registered, enrollmentSecret=%s", enrollmentSecret);
+            logger.debug("previously registered, enrollmentSecret=%s", enrollmentSecret);
             return;
         }
 
@@ -203,7 +202,7 @@ class Member implements Serializable {
         this.saveState();
 
         /* TODO implement logic present in callback function
-        debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
+        logger.debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
             self.enrollmentSecret = enrollmentSecret;
             self.saveState(function (err) {
                 if (err) return cb(err);
@@ -222,14 +221,14 @@ class Member implements Serializable {
     public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {
         if (null != enrollment) { //TODO: Should we tell the user an error? Not throwing error 
 								  // gives false impression that the call has been succeeded
-            debug("Previously enrolled, [enrollment=%j]", enrollment);
+            logger.debug("Previously enrolled, [enrollment=%s]", enrollment);
             return enrollment;
         }
 
         EnrollmentRequest req = new EnrollmentRequest();
         req.setEnrollmentID(getName());
         req.setEnrollmentSecret(enrollmentSecret);
-        debug("Enrolling [req=%j]", req);
+        logger.debug("Enrolling [req=%s]", req);
         
         this.enrollment = memberServices.enroll(req);
         this.saveState();
@@ -243,7 +242,7 @@ class Member implements Serializable {
      */
     public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
         if (null != enrollment) {
-            debug("previously enrolled, enrollment=%j", enrollment);
+            logger.debug("previously enrolled, enrollment=%s", enrollment);
             return ;
         }
 
@@ -266,7 +265,7 @@ class Member implements Serializable {
      * @param deployRequest the request
      */
     public void deploy(DeployRequest deployRequest) {
-        debug("Member.deploy");
+        logger.debug("Member.deploy");
 
         getChain().getPeers().get(0).deploy(deployRequest); //TODO add error checks
     }
@@ -276,7 +275,7 @@ class Member implements Serializable {
      * @param invokeRequest the request
      */
     public void invoke(InvokeRequest invokeRequest) {
-        debug("Member.invoke");
+        logger.debug("Member.invoke");
 
         getChain().getPeers().get(0).invoke(invokeRequest); //TODO add error checks
     }
@@ -286,7 +285,7 @@ class Member implements Serializable {
      * @param queryRequest the request
      */
     public void query(QueryRequest queryRequest) {
-        debug("Member.query");
+        logger.debug("Member.query");
 
         getChain().getPeers().get(0).query(queryRequest); //TODO add error checks
     }
@@ -319,10 +318,10 @@ class Member implements Serializable {
             return cb(Error(util.format("user '%s' is not enrolled",self.getName())));
         }
         let key = getAttrsKey(attrs);
-        debug("Member.getNextTCert: key=%s",key);
+        logger.debug("Member.getNextTCert: key=%s",key);
         let tcertGetter = self.tcertGetterMap[key];
         if (!tcertGetter) {
-            debug("Member.getNextTCert: key=%s, creating new getter",key);
+            logger.debug("Member.getNextTCert: key=%s, creating new getter",key);
             tcertGetter = new TCertGetter(self,attrs,key);
             self.tcertGetterMap[key] = tcertGetter;
         }
@@ -392,12 +391,4 @@ class Member implements Serializable {
     String toKeyValStoreName(String name) {
         return "member." + name;
     }
-
-    private static void info(String msg, Object... params) {
-        logger.log(Level.INFO, msg, params);
-      }
-    private static void debug(String msg, Object... params) {
-        logger.log(Level.FINE, msg, params);
-      }
-
 }

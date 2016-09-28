@@ -1,7 +1,6 @@
 package org.hyperledger.fabricjavasdk;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.hyperledger.fabricjavasdk.util.Logger;
 
 import protos.Fabric.Response;
 
@@ -9,7 +8,7 @@ import protos.Fabric.Response;
  * The Peer class represents a peer to which HFC sends deploy, invoke, or query requests.
  */
 class Peer {
-	private static final Logger logger = Logger.getLogger(Peer.class.getName());
+	private static final Logger logger = Logger.getLogger(Peer.class);
 
     private String url;
     private Chain chain;    
@@ -66,7 +65,7 @@ class Peer {
      */
     public void sendTransaction(Transaction transaction) {
 
-        debug("peer.sendTransaction");
+        logger.debug("peer.sendTransaction");
 
         // Send the transaction to the peer node via grpc
         // The rpc specification on the peer side is:
@@ -75,12 +74,12 @@ class Peer {
 
         /*TODO add error check
         if (err) {
-                debug("peer.sendTransaction: error=%j", err);
+                logger.debug("peer.sendTransaction: error=%s", err);
                 return eventEmitter.emit('error', new EventTransactionError(err));
         }
         */
 
-        debug("peer.sendTransaction: received %j", response.getMsg().toStringUtf8());
+        logger.debug("peer.sendTransaction: received %s", response.getMsg().toStringUtf8());
 
         // Check transaction type here, as invoke is an asynchronous call,
         // whereas a deploy and a query are synchonous calls. As such,
@@ -99,7 +98,7 @@ class Peer {
                         eventEmitter.emit("error", new EventTransactionError("the deploy response is missing the transaction UUID"));
                      } else {
                         let event = new EventDeploySubmitted(response.msg.toString(), tx.chaincodeID);
-                        debug("EventDeploySubmitted event: %j", event);
+                        logger.debug("EventDeploySubmitted event: %s", event);
                         eventEmitter.emit("submitted", event);
                         self.waitForDeployComplete(eventEmitter,event);
                      }
@@ -146,7 +145,7 @@ class Peer {
     /*TODO check waitForDeployComplete
     private void waitForDeployComplete(events.EventEmitter eventEmitter, EventDeploySubmitted submitted) {
         let waitTime = this.chain.getDeployWaitTime();
-        debug("waiting %d seconds before emitting deploy complete event",waitTime);
+        logger.debug("waiting %d seconds before emitting deploy complete event",waitTime);
         setTimeout(
            function() {
               let event = new EventDeployComplete(
@@ -170,7 +169,7 @@ class Peer {
     /*TODO check waitForInvokeComplete
     private void waitForInvokeComplete(events.EventEmitter eventEmitter) {
         let waitTime = this.chain.getInvokeWaitTime();
-        debug("waiting %d seconds before emitting invoke complete event",waitTime);
+        logger.debug("waiting %d seconds before emitting invoke complete event",waitTime);
         setTimeout(
            function() {
               eventEmitter.emit("complete",new EventInvokeComplete("waited "+waitTime+" seconds and assumed invoke was successful"));
@@ -186,13 +185,5 @@ class Peer {
     public void remove() {
         throw new RuntimeException("TODO: implement"); //TODO implement remove
     }
-
-    private static void info(String msg, Object... params) {
-        logger.log(Level.INFO, msg, params);
-      }
-
-    private static void debug(String msg, Object... params) {
-        logger.log(Level.FINE, msg, params);
-      }
 
 } // end Peer

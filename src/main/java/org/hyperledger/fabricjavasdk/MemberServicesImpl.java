@@ -4,13 +4,12 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabricjavasdk.exception.EnrollmentException;
 import org.hyperledger.fabricjavasdk.exception.RegistrationException;
 import org.hyperledger.fabricjavasdk.security.CryptoPrimitives;
+import org.hyperledger.fabricjavasdk.util.Logger;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
@@ -38,7 +37,7 @@ import protos.TLSCAPGrpc.TLSCAPBlockingStub;
  * MemberServicesImpl is the default implementation of a member services client.
  */
 class MemberServicesImpl implements MemberServices {
-	private static final Logger logger = Logger.getLogger(MemberServices.class.getName());
+	private static final Logger logger = Logger.getLogger(MemberServices.class);
 
     private ECAABlockingStub ecaaClient;
     private ECAPBlockingStub ecapClient;
@@ -139,12 +138,12 @@ class MemberServicesImpl implements MemberServices {
     	
     	try {
 			PrivateKey signKey = cryptoPrimitives.ecdsaKeyFromPrivate(Hex.decode(registrar.getEnrollment().getKey()));
-	    	debug("Retreived private key");
+	    	logger.debug("Retreived private key");
 			byte[][] signature = cryptoPrimitives.ecdsaSign(signKey, buffer);
-	    	debug("Signed the request with key");
+	    	logger.debug("Signed the request with key");
 			Signature sig = Signature.newBuilder().setType(CryptoType.ECDSA).setR(ByteString.copyFrom(signature[0])).setS(ByteString.copyFrom(signature[1])).build();
 			regReqBuilder.setSig(sig);
-	    	debug("Now sendingt register request");
+	    	logger.debug("Now sendingt register request");
 			Token token = this.ecaaClient.registerUser(regReqBuilder.build());
 			return token.getTok().toStringUtf8();	    	
 	    	
@@ -162,18 +161,18 @@ class MemberServicesImpl implements MemberServices {
     public Enrollment enroll(EnrollmentRequest req) throws EnrollmentException {
     	
     	
-        debug("[MemberServicesImpl.enroll] [%j]", req);
+        logger.debug("[MemberServicesImpl.enroll] [%s]", req);
         if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) { throw new RuntimeException("req.enrollmentID is not set");}
         if (StringUtil.isNullOrEmpty(req.getEnrollmentSecret())) { throw new RuntimeException("req.enrollmentSecret is not set");}
 
-        debug("[MemberServicesImpl.enroll] Generating keys...");
+        logger.debug("[MemberServicesImpl.enroll] Generating keys...");
 
         try {
 	        // generate ECDSA keys: signing and encryption keys        
 	        KeyPair signingKeyPair = cryptoPrimitives.ecdsaKeyGen();
 	        KeyPair encryptionKeyPair = cryptoPrimitives.ecdsaKeyGen();
 	
-	        debug("[MemberServicesImpl.enroll] Generating keys...done!");
+	        logger.debug("[MemberServicesImpl.enroll] Generating keys...done!");
 	
 	        // create the proto message
 	        ECertCreateReq.Builder eCertCreateRequestBuilder = ECertCreateReq.newBuilder()
@@ -202,14 +201,14 @@ class MemberServicesImpl implements MemberServices {
             
             eCertCreateResp = ecapClient.createCertificatePair(eCertCreateRequestBuilder.build());
 
-            debug("[MemberServicesImpl.enroll] eCertCreateResp : [%j]" + eCertCreateResp.toByteString());
+            logger.debug("[MemberServicesImpl.enroll] eCertCreateResp : [%s]" + eCertCreateResp.toByteString());
             
             Enrollment enrollment = new Enrollment();
             enrollment.setKey(Hex.toHexString(signingKeyPair.getPrivate().getEncoded()));
             enrollment.setCert(Hex.toHexString(eCertCreateResp.getCerts().getSign().toByteArray()));
             enrollment.setChainKey(Hex.toHexString(eCertCreateResp.getPkchain().toByteArray()));
             
-            debug("Enrolled successfully: "+enrollment);
+            logger.debug("Enrolled successfully: "+enrollment);
             return enrollment;
         
         } catch (Exception e) {
@@ -261,7 +260,7 @@ class MemberServicesImpl implements MemberServices {
         // send the request
         self.tcapClient.createCertificateSet(tCertCreateSetReq, function (err, resp) {
             if (err) return cb(err);
-            // debug('tCertCreateSetResp:\n', resp);
+            // logger.debug('tCertCreateSetResp:\n', resp);
             cb(null, self.processTCertBatch(req, resp));
         });
         
@@ -301,19 +300,19 @@ class MemberServicesImpl implements MemberServices {
             try {
                 x509Certificate = new crypto.X509Certificate(tCert.cert);
             } catch (ex) {
-                debug("Warning: problem parsing certificate bytes; retrying ... ", ex);
+                logger.debug("Warning: problem parsing certificate bytes; retrying ... ", ex);
                 continue;
             }
 
-            // debug("HERE2: got x509 cert");
+            // logger.debug("HERE2: got x509 cert");
             // extract the encrypted bytes from extension attribute
             let tCertIndexCT = x509Certificate.criticalExtension(crypto.TCertEncTCertIndex);
-            // debug('tCertIndexCT: ',JSON.stringify(tCertIndexCT));
+            // logger.debug('tCertIndexCT: ',JSON.stringify(tCertIndexCT));
             let tCertIndex = self.cryptoPrimitives.aesCBCPKCS7Decrypt(tCertOwnerEncryptKey, tCertIndexCT);
-            // debug('tCertIndex: ',JSON.stringify(tCertIndex));
+            // logger.debug('tCertIndex: ',JSON.stringify(tCertIndex));
 
             let expansionValue = self.cryptoPrimitives.hmac(expansionKey, tCertIndex);
-            // debug('expansionValue: ',expansionValue);
+            // logger.debug('expansionValue: ',expansionValue);
 
             // compute the private key
             let one = new BN(1);
@@ -366,14 +365,6 @@ class MemberServicesImpl implements MemberServices {
         if (mask == 0) mask = 1;  // Client
         return mask;
     }
-    
-    private static void info(String msg, Object... params) {
-        logger.log(Level.INFO, msg, params);
-      }
-    private static void debug(String msg, Object... params) {
-        //logger.log(Level.FINE, msg, params);
-    	info(msg, params);
-      }
     
     public static void main(String args[]) throws Exception {
 

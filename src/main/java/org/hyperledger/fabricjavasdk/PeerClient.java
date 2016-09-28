@@ -1,32 +1,25 @@
 package org.hyperledger.fabricjavasdk;
 
+import java.util.concurrent.TimeUnit;
+
+import org.hyperledger.fabricjavasdk.util.Logger;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
 import protos.Fabric.Response;
 import protos.PeerGrpc;
 import protos.PeerGrpc.PeerBlockingStub;
 import protos.PeerGrpc.PeerStub;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Timestamp;
-
 /**
  * Sample client code that makes gRPC calls to the server.
  */
 public class PeerClient {
-  private static final Logger logger = Logger.getLogger(PeerClient.class.getName());
+  private static final Logger logger = Logger.getLogger(PeerClient.class);
 
   private final ManagedChannel channel;
   private final PeerBlockingStub blockingStub;
@@ -48,7 +41,7 @@ public class PeerClient {
    * Blocking unary call example.  Calls getFeature and prints the response.
    */
   public void query() {
-    info("query");
+    logger.info("query");
 
     protos.Chaincode.ChaincodeID cid = protos.Chaincode.ChaincodeID
 			.newBuilder()
@@ -95,10 +88,10 @@ public class PeerClient {
 	try {
       response = blockingStub.processTransaction(transaction);
     } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      logger.warn("RPC failed: %s", e.getStatus());
       return;
     }
-      info("Status: \"{0}\" at {1}, {2}",
+      logger.info("Status: \"%s\" at %s, %s",
           response.getStatusValue(),
           response.getStatus().name(),
           String.valueOf(response.getMsg().toStringUtf8()));
@@ -109,10 +102,10 @@ public class PeerClient {
 		try {
 	      response = blockingStub.processTransaction(transaction);
 	    } catch (StatusRuntimeException e) {
-	      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+	      logger.warn("RPC failed: %s", e.getStatus());
 	      return null;
 	    }
-	      info("Status: \"{0}\" at {1}, {2}",
+	      logger.info("Status: \"%s\" at %s, %s",
 	          response.getStatusValue(),
 	          response.getStatus().name(),
 	          String.valueOf(response.getMsg().toStringUtf8()));
@@ -125,7 +118,7 @@ public class PeerClient {
    * Blocking unary call example.  Calls getFeature and prints the response.
    */
   public void deploy() {
-    info("deploy	");
+    logger.info("deploy	");
 
     protos.Chaincode.ChaincodeID cid = protos.Chaincode.ChaincodeID
 			.newBuilder()
@@ -176,10 +169,10 @@ public class PeerClient {
 	try {
       response = blockingStub.processTransaction(transaction);
     } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      logger.warn("RPC failed: %s", e.getStatus());
       return;
     }
-      info("Status: \"{0}\" at {1}, {2}",
+      logger.info("Status: \"%s\" at %s, %s",
           response.getStatusValue(),
           response.getStatus().name(),
           response.getMsg().toStringUtf8());
@@ -197,10 +190,6 @@ public class PeerClient {
     } finally {
       client.shutdown();
     }
-  }
-
-  private static void info(String msg, Object... params) {
-    logger.log(Level.INFO, msg, params);
   }
 
 }

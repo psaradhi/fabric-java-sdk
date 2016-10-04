@@ -244,21 +244,4 @@ public class CryptoPrimitives {
 		
 		return new SHA256Digest(); // default Digest? 
 	}
-
-	/*// TODO: Only for debugging
-	private String toPrintByteArray(byte[] data) {
-		String s = "[";
-		for (int i = 0; i < data.length; i++) {
-			if (data[i] < 0) {
-				s += data[i] & 0xFF;
-			} else {
-				s += data[i] & 0xFF;
-			}
-
-			s += " ";
-		}
-		s += "]";
-		return s;
-	} */
-
 }

@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
+import org.hyperledger.fabricjavasdk.util.Logger;
+
 /**
  * A local file-based key value store.
  * This implements the KeyValStore interface.
@@ -15,6 +17,7 @@ import java.util.Properties;
 public class FileKeyValStore implements KeyValStore {
 
     private String file;
+    private Logger logger = Logger.getLogger(FileKeyValStore.class);
 
     public FileKeyValStore(String file) {
     	this.file = file;
@@ -36,9 +39,9 @@ public class FileKeyValStore implements KeyValStore {
 	    	properties.load(input);	 
 	    	input.close();
     	} catch(FileNotFoundException e) {
-//    		e.printStackTrace(); //TODO log this error    		
+    		logger.warn("Could not find the file \"%s\"", file);
     	} catch(IOException e) {
-//    		e.printStackTrace(); //TODO log this error    		
+    		logger.warn("Could not load keyvalue store from file \"%s\", reason:%s", file, e.getMessage());
     	}
     	
     	return properties;
@@ -59,8 +62,8 @@ public class FileKeyValStore implements KeyValStore {
     	    	output.close();
     	    	
         	} catch(IOException e) {
-        		e.printStackTrace(); //TODO log this error
+        		logger.warn("Could not save the keyvalue store, reason:%s", e.getMessage());
         	}
     }
 
-} // end FileKeyValStore
+}

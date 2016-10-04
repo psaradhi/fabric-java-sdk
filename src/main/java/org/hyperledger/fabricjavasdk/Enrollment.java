@@ -26,11 +26,5 @@ public class Enrollment implements Serializable {
 	}
 	public void setChainKey(String chainKey) {
 		this.chainKey = chainKey;
-	}
-    
-	@Override
-	public String toString() {
-		return "[key="+key+", cert="+cert+", chainKey="+chainKey+"]";
-	}
-    
+	} 
 }

@@ -200,16 +200,6 @@ class Member implements Serializable {
 
         this.enrollmentSecret = memberServices.register(registrationRequest, chain.getRegistrar());
         this.saveState();
-
-        /* TODO implement logic present in callback function
-        logger.debug("memberServices.register err=%s, secret=%s", err, enrollmentSecret);
-            self.enrollmentSecret = enrollmentSecret;
-            self.saveState(function (err) {
-                if (err) return cb(err);
-                cb(null, enrollmentSecret);
-            });
-        });
-        */
     }
 
     /**
@@ -247,17 +237,7 @@ class Member implements Serializable {
         }
 
         register(registrationRequest);
-        enroll(this.enrollmentSecret);
-        
-        /* TODO implement the callback logic
-           function (err, enrollmentSecret) {
-            if (err) return cb(err);
-            self.enroll(enrollmentSecret, function (err, enrollment) {
-                if (err) return cb(err);
-                cb(null);
-            });
-        });
-        */
+        enroll(this.enrollmentSecret);        
     }
 
     /**
@@ -367,7 +347,7 @@ class Member implements Serializable {
 			        this.enrollmentSecret = state.enrollmentSecret;
 			        this.enrollment = state.enrollment;
 				} else {
-					// TODO: Raise a warning that object could not be loaded
+					logger.debug("Could not find member %s from keyvalue store", this.name);
 				}
 			} catch (IOException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block

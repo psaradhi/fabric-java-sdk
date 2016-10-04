@@ -365,47 +365,5 @@ class MemberServicesImpl implements MemberServices {
         if (mask == 0) mask = 1;  // Client
         return mask;
     }
-    
-    public static void main(String args[]) throws Exception {
-
-    	Chain testChain = new Chain("chain1");
-
-		testChain.setMemberServicesUrl("grpc://localhost:7054", null);
-		testChain.setKeyValStore(new FileKeyValStore(System.getProperty("user.home")+"/test.properties"));
-		testChain.addPeer("grpc://localhost:7051", null);			
-		Member registrar = testChain.enroll("admin", "Xurw3yU9zI0l");
-		
-    			
-//    	MemberServicesImpl msi = new MemberServicesImpl("grpc://localhost:7054", "");
-    	RegistrationRequest req = new RegistrationRequest();
-    	req.setAffiliation("bank_a");
-    	req.setEnrollmentID("myuser");
-    	
-//    	Member registrar = testChain.getMember("admin");
-    	testChain.setRegistrar(registrar);
-//    	msi.register(req, registrar);    	
-    	Member newUser = testChain.register(req);
-    	if (newUser.isRegistered()) {
-    		System.out.println("User is registered, token = " + newUser.getEnrollmentSecret());
-    	} else {
-    		System.out.println("User is not registered");
-    	}
-    	
-    	if (newUser.isEnrolled()) {
-    		System.out.println("User is enrolled");
-    	} else {
-    		System.out.println("User is not enrolled");
-    	}
-    	
-    	newUser.enroll(newUser.getEnrollmentSecret());
-    	
-    	if (newUser.isEnrolled()) {
-    		System.out.println("User is enrolled now");
-    	} else {
-    		System.out.println("User is still not enrolled");
-    	}
-    }
-
-
-} // end MemberServicesImpl
+}
 

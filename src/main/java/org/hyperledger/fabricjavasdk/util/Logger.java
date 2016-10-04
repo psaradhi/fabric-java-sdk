@@ -18,7 +18,7 @@ public class Logger {
 	}
 	
 	public void info(String message, Object... args) {
-		logger.log(Level.INFO, message, args);
+		logger.log(Level.INFO, String.format(message, args));
 	}
 	
 	public void warn(String message) {
@@ -26,7 +26,7 @@ public class Logger {
 	}
 	
 	public void warn(String message, Object... args) {
-		logger.log(Level.WARNING, message, args);
+		logger.log(Level.WARNING, String.format(message, args));
 	}
 	
 	public void debug(String message) {
@@ -34,6 +34,6 @@ public class Logger {
 	}
 	
 	public void debug(String message, Object... args) {
-		logger.log(Level.FINE, message, args);
+		logger.log(Level.FINE, String.format(message, args));
 	}
 }

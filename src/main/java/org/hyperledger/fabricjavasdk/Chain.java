@@ -270,13 +270,11 @@ public class Chain {
 
     /**
      * Enroll a user or other identity which has already been registered.
-     * If the user has already been enrolled, this will still succeed.
      * @param name The name of the user or other member to enroll.
      * @param secret The enrollment secret of the user or other member to enroll.
      * @throws EnrollmentException 
      */
-    
-  //TODO: shouldn't we throw error if user is already enrolled?
+
     Member enroll(String name, String secret) throws EnrollmentException {    	
         Member member = getMember(name);        
         member.enroll(secret);
@@ -293,12 +291,7 @@ public class Chain {
      * @throws EnrollmentException
      */
     Member registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
-        Member member = getMember(registrationRequest.enrollmentID);
-        if (member.isEnrolled()) {
-               logger.debug("already enrolled");
-               return member;
-        }
-
+        Member member = getMember(registrationRequest.enrollmentID);        
         member.registerAndEnroll(registrationRequest);
         return member;
     }

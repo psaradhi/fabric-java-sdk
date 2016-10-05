@@ -191,13 +191,7 @@ class Member implements Serializable {
         if (!registrationRequest.enrollmentID.equals(getName())) {
             throw new RuntimeException("registration enrollment ID and member name are not equal");
         }
-
-        if (null != enrollmentSecret) { //TODO: Should we tell the user an error? Not throwing error 
-        								// gives false impression that the call has been succeeded
-            logger.debug("previously registered, enrollmentSecret=%s", enrollmentSecret);
-            return;
-        }
-
+        
         this.enrollmentSecret = memberServices.register(registrationRequest, chain.getRegistrar());
         this.saveState();
     }
@@ -208,13 +202,7 @@ class Member implements Serializable {
      * @return enrollment details 
      * @throws EnrollmentException 
      */
-    public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {
-        if (null != enrollment) { //TODO: Should we tell the user an error? Not throwing error 
-								  // gives false impression that the call has been succeeded
-            logger.debug("Previously enrolled, [enrollment=%s]", enrollment);
-            return enrollment;
-        }
-
+    public Enrollment enroll(String enrollmentSecret) throws EnrollmentException {        
         EnrollmentRequest req = new EnrollmentRequest();
         req.setEnrollmentID(getName());
         req.setEnrollmentSecret(enrollmentSecret);
@@ -230,12 +218,7 @@ class Member implements Serializable {
      * @throws RegistrationException 
      * @throws EnrollmentException 
      */
-    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {
-        if (null != enrollment) {
-            logger.debug("previously enrolled, enrollment=%s", enrollment);
-            return ;
-        }
-
+    public void registerAndEnroll(RegistrationRequest registrationRequest) throws RegistrationException, EnrollmentException {        
         register(registrationRequest);
         enroll(this.enrollmentSecret);        
     }

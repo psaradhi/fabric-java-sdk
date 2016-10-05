@@ -16,7 +16,7 @@ or
 </code> if you don't want to run the unit tests
 
 ## Running the unit tests
-To run the unit tests, please use <code>mvn test</code> or <code>mvn install</code> which will run the unit tests and build the jar file. You must be running a local instance of membersrvcs and a peer to be able to run the unit tests. Please follow the instructions <a href="https://github.com/hyperledger/fabric/blob/master/docs/dev-setup/devenv.md">here<a> to setup the development environment.
+To run the unit tests, please use <code>mvn test</code> or <code>mvn install</code> which will run the unit tests and build the jar file. You must be running a local instance of membersrvcs and a peer to be able to run the unit tests. Please follow the instructions <a href="https://github.com/hyperledger/fabric/blob/master/docs/dev-setup/devenv.md">here</a> to setup the development environment.
 
 ## Using the SDK
 To use the SDK in your code, simply add the generated JAR file in your classpath. 

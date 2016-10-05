@@ -20,6 +20,7 @@ import "chaincodeevent.proto";
 import "fabric.proto";
 
 package protos;
+option java_package = "org.hyperledger.protos";
 
 
 //----Event objects----

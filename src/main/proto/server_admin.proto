@@ -17,6 +17,7 @@ limitations under the License.
 syntax = "proto3";
 
 package protos;
+option java_package = "org.hyperledger.protos";
 
 import "google/protobuf/empty.proto";
 

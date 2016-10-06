@@ -19,11 +19,13 @@ package org.hyperledger.fabric.sdk;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import io.netty.util.internal.StringUtil;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabric.sdk.exception.EnrollmentException;
 import org.hyperledger.fabric.sdk.exception.RegistrationException;
 import org.hyperledger.fabric.sdk.security.CryptoPrimitives;
-import org.hyperledger.fabric.sdk.util.Logger;
 import org.hyperledger.protos.*;
 import org.hyperledger.protos.Ca.*;
 import org.hyperledger.protos.ECAAGrpc.ECAABlockingStub;
@@ -40,7 +42,7 @@ import java.util.ArrayList;
  * MemberServicesImpl is the default implementation of a member services client.
  */
 class MemberServicesImpl implements MemberServices {
-	private static final Logger logger = Logger.getLogger(MemberServices.class);
+	private static final Log logger = LogFactory.getLog(MemberServices.class);
 
     private ECAABlockingStub ecaaClient;
     private ECAPBlockingStub ecapClient;
@@ -164,7 +166,7 @@ class MemberServicesImpl implements MemberServices {
     public Enrollment enroll(EnrollmentRequest req) throws EnrollmentException {
 
 
-        logger.debug("[MemberServicesImpl.enroll] [%s]", req);
+        logger.debug(String.format("[MemberServicesImpl.enroll] [%s]", req));
         if (StringUtil.isNullOrEmpty(req.getEnrollmentID())) { throw new RuntimeException("req.enrollmentID is not set");}
         if (StringUtil.isNullOrEmpty(req.getEnrollmentSecret())) { throw new RuntimeException("req.enrollmentSecret is not set");}
 

@@ -24,9 +24,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabric.sdk.exception.EnrollmentException;
-import org.hyperledger.fabric.sdk.util.Logger;
 import org.hyperledger.fabric.sdk.exception.RegistrationException;
 
 import io.netty.util.internal.StringUtil;
@@ -34,7 +35,7 @@ import io.netty.util.internal.StringUtil;
 class Member implements Serializable {
 	private static final long serialVersionUID = 8077132186383604355L;
 
-	private static final Logger logger = Logger.getLogger(Member.class);
+	private static final Log logger = LogFactory.getLog(Member.class);
 
     private transient Chain chain;
     private String name;
@@ -222,7 +223,7 @@ class Member implements Serializable {
         EnrollmentRequest req = new EnrollmentRequest();
         req.setEnrollmentID(getName());
         req.setEnrollmentSecret(enrollmentSecret);
-        logger.debug("Enrolling [req=%s]", req);
+        logger.debug(String.format("Enrolling [req=%s]", req));
 
         this.enrollment = memberServices.enroll(req);
         this.saveState();
@@ -346,7 +347,7 @@ class Member implements Serializable {
 			        this.enrollmentSecret = state.enrollmentSecret;
 			        this.enrollment = state.enrollment;
 				} else {
-					logger.debug("Could not find member %s from keyvalue store", this.name);
+					logger.debug(String.format("Could not find member %s from keyvalue store", this.name));
 				}
 			} catch (IOException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block

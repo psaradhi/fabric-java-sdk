@@ -18,7 +18,9 @@ package org.hyperledger.fabric.sdk;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
-import org.hyperledger.fabric.sdk.util.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Chaincode;
 import org.hyperledger.protos.Chaincode.ChaincodeDeploymentSpec;
 import org.hyperledger.protos.Chaincode.ChaincodeDeploymentSpec.ExecutionEnvironment;
@@ -35,7 +37,7 @@ import java.util.ArrayList;
  * Each transaction context uses exactly one tcert.
  */
 class TransactionContext  {
-	private static final Logger logger = Logger.getLogger(TransactionContext.class);
+	private static final Log logger = LogFactory.getLog(TransactionContext.class);
     private Member member;
     private Chain chain;
     private MemberServices memberServices;
@@ -104,8 +106,7 @@ class TransactionContext  {
      * @param deployRequest {Object} A deploy request of the form: { chaincodeID, payload, metadata, uuid, timestamp, confidentiality: { level, version, nonce }
    */
     public TransactionContext deploy(DeployRequest deployRequest) {
-        logger.debug("TransactionContext.deploy");
-        logger.debug("Received deploy request: %s", deployRequest);
+        logger.debug(String.format("Received deploy request: %s", deployRequest));
 
         // Get a TCert to use in the deployment transaction
         /*TODO implement security
@@ -141,9 +142,8 @@ class TransactionContext  {
      * Issue an invoke transaction.
      * @param invokeRequest {Object} An invoke request of the form: XXX
      */
-    public TransactionContext invoke(InvokeRequest invokeRequest) {
-        logger.debug("TransactionContext.invoke");
-        logger.debug("Received invoke request: %s", invokeRequest);
+    public TransactionContext invoke(InvokeRequest invokeRequest) {        
+        logger.debug(String.format("Received invoke request: %s", invokeRequest));
 
         // Get a TCert to use in the invoke transaction
         setAttrs(invokeRequest.attrs);
@@ -183,9 +183,8 @@ class TransactionContext  {
      * Issue an query transaction.
      * @param queryRequest {Object} A query request of the form: XXX
      */
-    public TransactionContext query(QueryRequest queryRequest) {
-      logger.debug("TransactionContext.query");
-      logger.debug("Received query request: %s", queryRequest);
+    public TransactionContext query(QueryRequest queryRequest) {      
+      logger.debug(String.format("Received query request: %s", queryRequest));
 
 
       // Get a TCert to use in the query transaction
@@ -241,7 +240,7 @@ class TransactionContext  {
      * @param tx {Transaction} The transaction.
      */
     private TransactionContext execute(Transaction tx) {
-        logger.debug("Executing transaction [%s]", tx);
+        logger.debug(String.format("Executing transaction [%s]", tx));
 
         getChain().sendTransaction(tx);
         /*TODO implement security

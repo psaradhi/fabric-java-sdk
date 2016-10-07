@@ -14,15 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm.exceptions;
+package org.hyperledger.fabric.sdk.shim.fsm;
 
-public class UnknownEventException extends Exception {
+import org.hyperledger.fabric.sdk.shim.fsm.exceptions.NotInTransitionException;
 
-	public final String event;
+public class Transitioner {
 
-	public UnknownEventException(String event) {
-		super("Event '" + event + "' does not exist");
-		this.event = event;
+	public void transition(FSM fsm) throws NotInTransitionException {
+		if (fsm.transition == null) {
+			throw new NotInTransitionException();
+		}
+		fsm.transition.run();
+		fsm.transition = null;
 	}
 
 }

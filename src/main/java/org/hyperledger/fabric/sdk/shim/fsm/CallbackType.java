@@ -14,19 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm.exceptions;
+package org.hyperledger.fabric.sdk.shim.fsm;
 
-public class NoTransitionException extends Exception {
+public enum CallbackType {
 
-	public final Exception error;
-
-	public NoTransitionException() {
-		this(null);
-	}
-
-	public NoTransitionException(Exception error) {
-		super("No transition occurred" + (error == null ? "" : " because of error " + error.toString()));
-		this.error = error;
-	}
+	NONE,
+	BEFORE_EVENT,
+	LEAVE_STATE,
+	ENTER_STATE,
+	AFTER_EVENT;
 
 }

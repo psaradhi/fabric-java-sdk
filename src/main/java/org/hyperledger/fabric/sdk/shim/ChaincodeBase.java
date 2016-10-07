@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim;
+package org.hyperledger.fabric.sdk.shim;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -26,6 +26,7 @@ import io.netty.handler.ssl.SslContext;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Chaincode.ChaincodeID;
@@ -82,7 +83,7 @@ public abstract class ChaincodeBase {
 			if (cl.hasOption('i')) {
 				id = cl.getOptionValue('i');
 			}
-		} catch (Exception e) {
+		} catch (ParseException e) {
 			logger.warn("cli parsing failed with exception",e);
 
 		}
@@ -139,16 +140,9 @@ public abstract class ChaincodeBase {
 										Handler.shortID(message.getTxid()), message.getType()));
 								handler.handleMessage(message);
 							} catch (Exception e) {
+								logger.error(e.getMessage());
 								e.printStackTrace();
 								System.exit(-1);
-								//TODO
-								//								} else if (err != nil) {
-								//									logger.Error(fmt.Sprintf("Received error from server: %s, ending chaincode stream", err))
-								//									return
-								//								} else if (in == nil) {
-								//									err = fmt.Errorf("Received nil message, ending chaincode stream")
-								//											logger.debug("Received nil message, ending chaincode stream")
-								//											return
 							}
 						}
 
@@ -165,7 +159,7 @@ public abstract class ChaincodeBase {
 						}
 					});
 		} catch (Exception e) {
-			logger.error("Unable to connect to peer server");
+			logger.error("Unable to connect to peer server -" + e.getMessage());
 			System.exit(-1);
 		}
 

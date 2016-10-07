@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm;
+package org.hyperledger.fabric.sdk.shim.fsm;
 
-public enum CallbackType {
+public interface Callback {
 
-	NONE,
-	BEFORE_EVENT,
-	LEAVE_STATE,
-	ENTER_STATE,
-	AFTER_EVENT;
+	public void run(Event event);
 
 }

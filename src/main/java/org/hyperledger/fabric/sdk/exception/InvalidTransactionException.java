@@ -14,12 +14,11 @@
 
 package org.hyperledger.fabric.sdk.exception;
 
-public class CryptoException extends BaseException {
 
-	private static final long serialVersionUID = 1L;
+public class InvalidTransactionException extends BaseException{
 
-	public CryptoException(String message, Exception parent) {
-		super(message, parent);
-	}
 
+    public InvalidTransactionException(String message, Exception parent) {
+        super(message, parent);
+    }
 }

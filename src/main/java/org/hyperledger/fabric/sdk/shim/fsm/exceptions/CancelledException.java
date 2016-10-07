@@ -14,18 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm.exceptions;
+package org.hyperledger.fabric.sdk.shim.fsm.exceptions;
 
-public class InvalidEventException extends Exception {
+public class CancelledException extends Exception {
 
-	public final String event;
-	public final String state;
+	public final Exception error;
 
-	public InvalidEventException(String event, String state) {
-		super("Event '" + event + "' is innappropriate"
-				+ " given the current state, " + state);
-		this.event = event;
-		this.state = state;
+	public CancelledException() {
+		this(null);
+	}
+
+	public CancelledException(Exception error) {
+		super("The transition was cancelled" + error == null ?
+				"" : " with error " + error.toString());
+		this.error = error;
 	}
 
 }

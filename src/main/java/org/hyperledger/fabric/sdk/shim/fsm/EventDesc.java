@@ -1,4 +1,4 @@
-package org.hyperledger.fabric.shim.fsm;
+package org.hyperledger.fabric.sdk.shim.fsm;
 
 /**
  * Represents an event when initializing the FSM.

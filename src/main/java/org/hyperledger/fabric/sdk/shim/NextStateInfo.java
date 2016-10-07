@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim;
+package org.hyperledger.fabric.sdk.shim;
 
 import org.hyperledger.protos.Chaincode.ChaincodeMessage;
 

@@ -14,10 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm;
+package org.hyperledger.fabric.sdk.shim.fsm.exceptions;
 
-public interface Callback {
+public class UnknownEventException extends Exception {
 
-	public void run(Event event);
+	public final String event;
+
+	public UnknownEventException(String event) {
+		super("Event '" + event + "' does not exist");
+		this.event = event;
+	}
 
 }

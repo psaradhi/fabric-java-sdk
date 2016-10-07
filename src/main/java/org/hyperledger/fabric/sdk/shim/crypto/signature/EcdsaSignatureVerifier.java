@@ -1,6 +1,6 @@
-package org.hyperledger.fabric.shim.crypto.signature;
+package org.hyperledger.fabric.sdk.shim.crypto.signature;
 
-import org.hyperledger.fabric.shim.crypto.CryptoPrimitives;
+import org.hyperledger.fabric.sdk.shim.crypto.CryptoPrimitives;
 
 public class EcdsaSignatureVerifier implements SignatureVerifier {
 private CryptoPrimitives crypto;

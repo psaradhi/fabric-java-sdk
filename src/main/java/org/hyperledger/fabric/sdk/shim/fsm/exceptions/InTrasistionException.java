@@ -14,13 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim.fsm.exceptions;
+package org.hyperledger.fabric.sdk.shim.fsm.exceptions;
 
-public class NotInTransitionException extends Exception {
+public class InTrasistionException extends Exception {
 
-	public NotInTransitionException() {
-		super("The transition is inappropriate"
-				+ " because there is no state change in progress");
+	public final String event;
+
+	public InTrasistionException(String event) {
+		super("Event '" + event + "' is inappropriate because"
+				+ " the previous trasaction had not completed");
+		this.event = event;
 	}
 
 }

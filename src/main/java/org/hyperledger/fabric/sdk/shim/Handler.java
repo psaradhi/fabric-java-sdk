@@ -14,16 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim;
+package org.hyperledger.fabric.sdk.shim;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hyperledger.fabric.helper.Channel;
-import org.hyperledger.fabric.shim.fsm.*;
-import org.hyperledger.fabric.shim.fsm.exceptions.CancelledException;
-import org.hyperledger.fabric.shim.fsm.exceptions.NoTransitionException;
+import org.hyperledger.fabric.sdk.exception.InvalidTransactionException;
+import org.hyperledger.fabric.sdk.helper.Channel;
+import org.hyperledger.fabric.sdk.shim.fsm.*;
+import org.hyperledger.fabric.sdk.shim.fsm.exceptions.CancelledException;
+import org.hyperledger.fabric.sdk.shim.fsm.exceptions.NoTransitionException;
 import org.hyperledger.protos.Chaincode.*;
 import org.hyperledger.protos.Chaincode.ChaincodeMessage.Builder;
 
@@ -105,7 +107,9 @@ public class Handler {
 					shortID(message), message.getType(), e));
 			throw new RuntimeException(String.format("Error sending %s: %s", message.getType(), e));
 		}
-		if(logger.isTraceEnabled())logger.trace("serialSend complete for message "+message);
+		if(logger.isTraceEnabled()) {
+            logger.trace("serialSend complete for message "+message);
+        }
 	}
 
 	public synchronized Channel<ChaincodeMessage> createChannel(String uuid) {
@@ -115,7 +119,9 @@ public class Handler {
 
 		Channel<ChaincodeMessage> channel = new Channel<ChaincodeMessage>();
 		responseChannel.put(uuid, channel);
-		if(logger.isTraceEnabled())logger.trace("channel created with uuid "+uuid);
+		if(logger.isTraceEnabled()){
+            logger.trace("channel created with uuid "+uuid);
+        }
 
 		return channel;
 	}
@@ -148,7 +154,9 @@ public class Handler {
 			channel.close();
 		}
 
-		if(logger.isTraceEnabled())logger.trace("deleteChannel done with uuid "+uuid);
+		if(logger.isTraceEnabled()){
+            logger.trace("deleteChannel done with uuid "+uuid);
+        }
 	}
 
 	/**
@@ -179,7 +187,7 @@ public class Handler {
 	 * Handles requests to initialize chaincode
 	 * @param message chaincode to be initialized
 	 */
-	public void handleInit(ChaincodeMessage message) {
+	public void handleInit(ChaincodeMessage message) throws InvalidTransactionException  {
 		Runnable task = () -> {
 			ChaincodeMessage nextStatemessage = null;
 			boolean send = true;
@@ -188,12 +196,14 @@ public class Handler {
 				ChaincodeInput input;
 				try {
 					input = ChaincodeInput.parseFrom(message.getPayload());
-				} catch (Exception e) {
-					//				payload = []byte(unmarshalErr.Error())
-					//				// Send ERROR message to chaincode support and change state
-					//				logger.debug(String.format("[%s]Incorrect payload format. Sending %s", shortID(message), ERROR)
-					//				nextStatemessage = ChaincodeMessage.newBuilder(){Type: ERROR, Payload: payload, Uuid: message.getTxid()}
-					return;
+				} catch (InvalidProtocolBufferException e) {
+                    nextStatemessage = ChaincodeMessage.newBuilder()
+                            .setType(ERROR)
+                            .setPayload(ByteString.copyFromUtf8("Unmarshall error -"
+                                    + e.getMessage()))
+                            .setTxid(message.getTxid())
+                            .build();
+                    return;
 				}
 
 				//			// Mark as a transaction (allow put/del state)
@@ -230,9 +240,8 @@ public class Handler {
 						shortID(message), COMPLETED)));
 
 				//TODO put in all exception states
-			} catch (Exception e) {
-				throw e;
-			} finally {
+			}
+		 finally {
 				triggerNextState(nextStatemessage, send);
 			}
 		};
@@ -262,8 +271,12 @@ public class Handler {
 				shortID(message), message.getType().toString()));
 		if (message.getType() == INIT) {
 			// Call the chaincode's Run function to initialize
-			handleInit(message);
-		}
+            try {
+                handleInit(message);
+            } catch (InvalidTransactionException e) {
+                e.printStackTrace();
+            }
+        }
 	}
 
 	//
@@ -442,18 +455,21 @@ public class Handler {
 		try {
 			return (ChaincodeMessage) event.args[0];
 		} catch (Exception e) {
-			RuntimeException error = new RuntimeException("Received unexpected message type");
+			InvalidTransactionException error = new InvalidTransactionException("Received unexpected message type", e);
 			event.cancel(error);
-			throw error;
-		}
+        }
 	}
 
 	public void afterError(Event event) {
 		ChaincodeMessage message = messageHelper(event);
 		/* TODO- revisit. This may no longer be needed with the serialized/streamlined messaging model
 		 * There are two situations in which the ERROR event can be triggered:
-		 * 1. When an error is encountered within handleInit or handleTransaction - some issue at the chaincode side; In this case there will be no responseChannel and the message has been sent to the validator.
-		 * 2. The chaincode has initiated a request (get/put/del state) to the validator and is expecting a response on the responseChannel; If ERROR is received from validator, this needs to be notified on the responseChannel.
+		 * 1. When an error is encountered within handleInit or handleTransaction -
+		 * some issue at the chaincode side; In this case there will be no responseChannel
+		 * and the message has been sent to the validator.
+		 * 2. The chaincode has initiated a request (get/put/del state) to the validator
+		 * and is expecting a response on the responseChannel; If ERROR is received
+		 * from validator, this needs to be notified on the responseChannel.
 		 */
 		try {
 			sendChannel(message);
@@ -467,7 +483,6 @@ public class Handler {
 	public ByteString handleGetState(String key, String uuid) {
 		try {
 			//TODO Implement method to get and put entire state map and not one key at a time?
-			// Create the channel on which to communicate the response from validating peer
 			// Create the channel on which to communicate the response from validating peer
 			Channel<ChaincodeMessage> responseChannel;
 			try {

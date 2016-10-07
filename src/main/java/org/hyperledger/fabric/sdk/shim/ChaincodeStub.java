@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.hyperledger.fabric.shim;
+package org.hyperledger.fabric.sdk.shim;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Chaincode;
 import org.hyperledger.protos.Chaincode.ChaincodeSecurityContext;
 import org.hyperledger.protos.TableProto;
-import org.hyperledger.fabric.shim.crypto.signature.EcdsaSignatureVerifier;
+import org.hyperledger.fabric.sdk.shim.crypto.signature.EcdsaSignatureVerifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

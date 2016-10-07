@@ -14,9 +14,10 @@
 
 package org.hyperledger.fabric.sdk;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.sdk.exception.EnrollmentException;
 import org.hyperledger.fabric.sdk.security.CryptoPrimitives;
-import org.hyperledger.fabric.sdk.util.Logger;
 import org.hyperledger.fabric.sdk.exception.RegistrationException;
 
 import java.security.cert.CertificateException;
@@ -28,7 +29,7 @@ import java.util.Vector;
  * The class representing a chain with which the client SDK interacts.
  */
 public class Chain {
-	private static final Logger logger = Logger.getLogger(Chain.class);
+	private static final Log logger = LogFactory.getLog(Chain.class);
 
     // Name of the chain is only meaningful to the client
     private String name;

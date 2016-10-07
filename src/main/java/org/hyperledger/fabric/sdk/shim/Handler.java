@@ -457,6 +457,7 @@ public class Handler {
 		} catch (Exception e) {
 			InvalidTransactionException error = new InvalidTransactionException("Received unexpected message type", e);
 			event.cancel(error);
+            throw e;
         }
 	}
 

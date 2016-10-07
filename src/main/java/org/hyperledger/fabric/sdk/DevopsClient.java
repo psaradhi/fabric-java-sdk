@@ -18,7 +18,9 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import org.hyperledger.fabric.sdk.util.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Chaincode;
 import org.hyperledger.protos.Chaincode.ChaincodeDeploymentSpec;
 import org.hyperledger.protos.Chaincode.ChaincodeInvocationSpec;
@@ -35,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * Sample client code that makes gRPC calls to the server.
  */
 public class DevopsClient {
-	private static final Logger logger = Logger.getLogger(DevopsClient.class);
+	private static final Log logger = LogFactory.getLog(DevopsClient.class);
 
 	private final ManagedChannel channel;
 	private final DevopsBlockingStub blockingStub;
@@ -64,11 +66,11 @@ public class DevopsClient {
 		try {
 			response = blockingStub.query(ispec);
 		} catch (StatusRuntimeException e) {
-			logger.warn("RPC failed: %s", e.getStatus());
+			logger.warn(String.format("RPC failed: %s", e.getStatus()));
 			return;
 		}
-		logger.info("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
-				String.valueOf(response.getMsg().toStringUtf8()));
+		logger.info(String.format("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
+				String.valueOf(response.getMsg().toStringUtf8())));
 
 	}
 
@@ -107,11 +109,11 @@ public class DevopsClient {
 		try {
 			response = blockingStub.invoke(ispec);
 		} catch (StatusRuntimeException e) {
-			logger.warn("RPC failed: %s", e.getStatus());
+			logger.warn(String.format("RPC failed: %s", e.getStatus()));
 			return;
 		}
-		logger.info("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
-				String.valueOf(response.getMsg().toStringUtf8()));
+		logger.info(String.format("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
+				String.valueOf(response.getMsg().toStringUtf8())));
 
 	}
 
@@ -126,12 +128,12 @@ public class DevopsClient {
 		try {
 			response = blockingStub.deploy(spec);
 		} catch (StatusRuntimeException e) {
-			logger.warn("RPC failed: %s", e.getStatus());
+			logger.warn(String.format("RPC failed: %s", e.getStatus()));
 			return;
 		}
 		chaincodeName = response.getChaincodeSpec().getChaincodeID().getName();
-		logger.info("Status: \"%s\" at %s, %s", response.getChaincodeSpec().getChaincodeID().getName(),
-				response.getExecEnv().toString(), response.getExecEnv().toString());
+		logger.info(String.format("Status: \"%s\" at %s, %s", response.getChaincodeSpec().getChaincodeID().getName(),
+				response.getExecEnv().toString(), response.getExecEnv().toString()));
 	}
 
 	@Override

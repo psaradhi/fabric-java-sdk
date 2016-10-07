@@ -14,15 +14,15 @@
 
 package org.hyperledger.fabric.sdk;
 
-import org.hyperledger.fabric.sdk.util.Logger;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Fabric.Response;
 
 /**
  * The Peer class represents a peer to which SDK sends deploy, invoke, or query requests.
  */
 class Peer {
-	private static final Logger logger = Logger.getLogger(Peer.class);
+	private static final Log logger = LogFactory.getLog(Peer.class);
 
     private String url;
     private Chain chain;
@@ -92,7 +92,7 @@ class Peer {
         }
         */
 
-        logger.debug("peer.sendTransaction: received %s", response.getMsg().toStringUtf8());
+        logger.debug(String.format("peer.sendTransaction: received %s", response.getMsg().toStringUtf8()));
 
         // Check transaction type here, as invoke is an asynchronous call,
         // whereas a deploy and a query are synchonous calls. As such,

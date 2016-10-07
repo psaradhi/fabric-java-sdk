@@ -17,7 +17,9 @@ package org.hyperledger.fabric.sdk;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import org.hyperledger.fabric.sdk.util.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.protos.Fabric;
 import org.hyperledger.protos.Fabric.Response;
 import org.hyperledger.protos.PeerGrpc;
@@ -30,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * Sample client code that makes gRPC calls to the server.
  */
 public class PeerClient {
-	private static final Logger logger = Logger.getLogger(PeerClient.class);
+	private static final Log logger = LogFactory.getLog(PeerClient.class);
 
 	private final ManagedChannel channel;
 	private final PeerBlockingStub blockingStub;
@@ -54,11 +56,11 @@ public class PeerClient {
 		try {
 			response = blockingStub.processTransaction(transaction);
 		} catch (StatusRuntimeException e) {
-			logger.warn("RPC failed: %s", e.getStatus());
+			logger.warn(String.format("RPC failed: %s", e.getStatus()));
 			return null;
 		}
-		logger.info("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
-				String.valueOf(response.getMsg().toStringUtf8()));
+		logger.info(String.format("Status: \"%s\" at %s, %s", response.getStatusValue(), response.getStatus().name(),
+				String.valueOf(response.getMsg().toStringUtf8())));
 
 		return response;
 

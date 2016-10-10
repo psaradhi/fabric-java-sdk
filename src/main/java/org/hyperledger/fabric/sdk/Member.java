@@ -50,29 +50,13 @@ class Member implements Serializable {
 
     /**
      * Constructor for a member.
-     * @param cfg {string | RegistrationRequest} The member name or registration request. //TODO: Refator this into two methods
+     * @param name The member name
      * @returns {Member} A member who is neither registered nor enrolled.
      */
 
     public Member(String name, Chain chain) {
-    	this((Object) name, chain);
-    }
-
-    public Member(Object cfg, Chain chain) {
-        if (cfg instanceof String) {
-            this.name = (String) cfg;
-        } else if (cfg instanceof Object) {
-
-        	/* TODO implement this logic
-        	let req = cfg;
-            this.name = req.enrollmentID || req.name;
-            this.roles = req.roles || ["fabric.user"];
-            this.account = req.account;
-            this.affiliation = req.affiliation;
-
-            */
-        }
-        this.chain = chain;
+    	this.name = name;
+    	this.chain = chain;
         this.memberServices = chain.getMemberServices();
         this.keyValStore = chain.getKeyValStore();
         this.keyValStoreName = toKeyValStoreName(this.name);
@@ -319,8 +303,7 @@ class Member implements Serializable {
 		keyValStore.setValue(keyValStoreName, Hex.toHexString(bos.toByteArray()));
 		bos.close();
 	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+		logger.debug(String.format("Could not save state of member %s", this.name), e);
 	}
    }
 
@@ -348,8 +331,7 @@ class Member implements Serializable {
 					logger.debug(String.format("Could not find member %s from keyvalue store", this.name));
 				}
 			} catch (IOException | ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.debug(String.format("Could not restore state of member %s", this.name), e);
 			}
 		}
    }

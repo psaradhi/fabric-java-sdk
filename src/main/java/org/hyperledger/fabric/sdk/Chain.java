@@ -314,7 +314,6 @@ public class Chain {
     /**
      * Send a transaction to a peer.
      * @param tx The transaction
-     * @param eventEmitter An event emitter
      */
     void sendTransaction(Transaction tx) {
         if (this.peers.size() == 0) {
